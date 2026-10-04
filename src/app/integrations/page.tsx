@@ -37,6 +37,7 @@ function IntegrationsContent() {
   const [logs, setLogs] = useState<IntegrationLog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [syncingPlatform, setSyncingPlatform] = useState<string | null>(null);
+  const [shopToggling, setShopToggling] = useState<string | null>(null);
 
   // Modals state
   const [configModalPlatform, setConfigModalPlatform] = useState<IntegrationConfig | null>(null);
@@ -80,6 +81,18 @@ function IntegrationsContent() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleToggleShop = async (platform: string, open: boolean) => {
+    setShopToggling(platform);
+    try {
+      await api.updateIntegrationConfig(platform, { shop_open: open } as any);
+      await loadData();
+    } catch (err) {
+      console.error("Failed to toggle shop status:", err);
+    } finally {
+      setShopToggling(null);
+    }
+  };
 
   const handleSync = async (platform: string) => {
     setSyncingPlatform(platform);
@@ -309,6 +322,34 @@ function IntegrationsContent() {
                         {cfg.environment}
                       </Badge>
                     </div>
+                  </div>
+
+                  <div className="flex align-middle items-center gap-2 mb-2">
+                    <Badge variant="neutral" className={cn("text-[9px] py-0 px-1 font-bold", cfg.shop_open ? "text-emerald-700 border-emerald-300 bg-emerald-50" : "text-rose-700 border-rose-300 bg-rose-50")}>
+                      {cfg.shop_open ? "SHOP OPEN" : "SHOP CLOSED"}
+                    </Badge>
+                  </div>
+
+                  {/* Shop Open / Close Toggle */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant={cfg.shop_open ? "outline" : "primary"}
+                      onClick={() => handleToggleShop(cfg.platform, true)}
+                      disabled={shopToggling === cfg.platform || cfg.shop_open === true}
+                      className={cn("flex-1 text-xs gap-1", cfg.shop_open ? "border-emerald-200 text-emerald-700" : "bg-emerald-600 text-white hover:bg-emerald-700")}
+                    >
+                      Open Shop
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={cfg.shop_open ? "danger" : "outline"}
+                      onClick={() => handleToggleShop(cfg.platform, false)}
+                      disabled={shopToggling === cfg.platform || cfg.shop_open === false}
+                      className={cn("flex-1 text-xs gap-1", !cfg.shop_open ? "border-rose-200 text-rose-700" : "")}
+                    >
+                      Close Shop
+                    </Button>
                   </div>
 
                   {/* Actions */}

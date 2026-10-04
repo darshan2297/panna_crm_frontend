@@ -6,7 +6,6 @@ import {
   ShoppingBag,
   Plus,
   RefreshCw,
-  Search,
   CheckCircle2,
   Clock,
   ChefHat,
@@ -28,6 +27,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -494,19 +494,15 @@ function OrdersContent() {
 
           {/* Search & Payment Filter Controls */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-stone-100">
-            <div className="sm:col-span-8 relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search by order # (e.g. PB-1024), customer name, or phone..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-900 bg-stone-50/50"
-              />
-            </div>
+            <SearchInput
+              value={searchQuery}
+              onChange={(v) => {
+                setSearchQuery(v);
+                setPage(1);
+              }}
+              placeholder="Search by order # (e.g. PB-1024), customer name, or phone..."
+              className="sm:col-span-8 max-w-none"
+            />
 
             <div className="sm:col-span-4 flex items-center space-x-2">
               <span className="text-[11px] font-bold text-stone-500 whitespace-nowrap">Payment:</span>

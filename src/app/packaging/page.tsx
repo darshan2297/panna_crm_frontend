@@ -5,13 +5,10 @@ import {
   Package,
   Plus,
   RefreshCw,
-  Search,
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
   TrendingDown,
-  LayoutGrid,
-  List as ListIcon,
   Edit2,
   Trash2,
   Layers,
@@ -26,6 +23,8 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ViewModeToggle } from "@/components/common/ViewModeToggle";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -209,6 +208,7 @@ function PackagingDashboardContent() {
     if (rules.length > 0 && !simResult) {
       handleSimulate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when rules first load
   }, [rules]);
 
   // Filter items in catalog tab
@@ -509,7 +509,7 @@ function PackagingDashboardContent() {
           <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="font-bold uppercase tracking-wider text-[11px] text-stone-700">
-                Today's Usage
+                Today&apos;s Usage
               </span>
               <div className="w-6 h-6 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700">
                 <TrendingDown className="w-3.5 h-3.5" />
@@ -581,30 +581,7 @@ function PackagingDashboardContent() {
             </div>
 
             {activeTab === "items" && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg border text-xs font-semibold ${
-                    viewMode === "grid"
-                      ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-bold"
-                      : "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
-                  }`}
-                  title="Grid View"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`p-2 rounded-lg border text-xs font-semibold ${
-                    viewMode === "table"
-                      ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-bold"
-                      : "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
-                  }`}
-                  title="Table View"
-                >
-                  <ListIcon className="w-4 h-4" />
-                </button>
-              </div>
+              <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
             )}
           </div>
 
@@ -633,19 +610,14 @@ function PackagingDashboardContent() {
 
               {/* Filter and Search Bar */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Search by container name, SKU, material, or supplier..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setItemsPage(1);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
-                  />
-                </div>
+                <SearchInput
+                  value={searchQuery}
+                  onChange={(v) => {
+                    setSearchQuery(v);
+                    setItemsPage(1);
+                  }}
+                  placeholder="Search by container name, SKU, material, or supplier..."
+                />
 
                 <div className="flex flex-wrap items-center gap-2">
                   <select

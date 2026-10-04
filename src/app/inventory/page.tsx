@@ -5,15 +5,12 @@ import {
   Boxes,
   Plus,
   RefreshCw,
-  Search,
   Filter,
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
   TrendingDown,
   TrendingUp,
-  LayoutGrid,
-  List as ListIcon,
   Edit2,
   Trash2,
   Layers,
@@ -33,6 +30,8 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ViewModeToggle } from "@/components/common/ViewModeToggle";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -415,30 +414,7 @@ function InventoryManagementContent() {
           </div>
 
           {activeTab === "all" && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg border text-xs font-semibold ${
-                  viewMode === "grid"
-                    ? "bg-emerald-50 text-emerald-900 border-emerald-300"
-                    : "bg-white text-stone-600 border-stone-200"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-2 rounded-lg border text-xs font-semibold ${
-                  viewMode === "table"
-                    ? "bg-emerald-50 text-emerald-900 border-emerald-300"
-                    : "bg-white text-stone-600 border-stone-200"
-                }`}
-                title="Table View"
-              >
-                <ListIcon className="w-4 h-4" />
-              </button>
-            </div>
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
           )}
         </div>
 
@@ -446,16 +422,11 @@ function InventoryManagementContent() {
         {activeTab !== "transactions" ? (
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                placeholder="Search by ingredient, SKU, or supplier..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
-              />
-            </div>
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search by ingredient, SKU, or supplier..."
+            />
 
             {/* Category and Status Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">

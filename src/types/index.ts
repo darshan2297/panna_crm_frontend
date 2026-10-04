@@ -977,12 +977,15 @@ export interface IntegrationConfig {
   is_enabled: boolean;
   store_id?: string;
   api_key_masked?: string;
+  api_key?: string;
+  webhook_secret?: string;
   auto_accept: boolean;
   environment: string;
   status: "CONNECTED" | "DEGRADED" | "DISCONNECTED";
   last_sync_at?: string;
   orders_synced_today: number;
   sync_interval_minutes: number;
+  shop_open?: boolean;
   created_at: string;
   updated_at: string;
 }

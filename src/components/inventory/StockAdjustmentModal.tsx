@@ -51,6 +51,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     setReferenceNo("");
     setNotes("");
     setError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form only when modal opens or items reload
   }, [initialItem, isOpen, items]);
 
   useEffect(() => {

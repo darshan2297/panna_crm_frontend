@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -16,7 +17,6 @@ import { User, UserRole } from "@/types";
 import {
   Users as UsersIcon,
   UserPlus,
-  Search,
   Filter,
   Shield,
   Edit2,
@@ -101,6 +101,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- search applies on submit, not per keystroke
   }, [selectedRole, page, pageSize]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -265,16 +266,12 @@ export default function UsersPage() {
 
         {/* Search Bar */}
         <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by name, email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-stone-50/50 border border-stone-200 rounded-xl pl-10 pr-3 py-2 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-900 w-64"
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, email..."
+            className="max-w-none w-64"
+          />
           <Button type="submit" variant="secondary" size="sm">
             Search
           </Button>

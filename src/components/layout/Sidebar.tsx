@@ -45,10 +45,18 @@ const navItems: NavItemConfig[] = [
     icon: ShoppingBag,
     children: [
       { title: "All Orders", href: "/orders" },
+      { title: "Live Kitchen Orders", href: "/live-orders" },
       { title: "Website Orders", href: "/orders?platform=website" },
       { title: "Zomato Orders", href: "/orders?platform=zomato" },
       { title: "Swiggy Orders", href: "/orders?platform=swiggy" },
     ],
+  },
+  {
+    title: "Live Orders",
+    href: "/live-orders",
+    icon: Flame,
+    badge: "LIVE",
+    badgeVariant: "danger",
   },
   {
     title: "Menu",

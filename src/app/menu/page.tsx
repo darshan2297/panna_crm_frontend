@@ -5,14 +5,11 @@ import {
   UtensilsCrossed,
   Plus,
   RefreshCw,
-  Search,
   Filter,
   CheckCircle2,
   AlertCircle,
   Clock,
   Flame,
-  LayoutGrid,
-  List as ListIcon,
   Edit2,
   Trash2,
   ExternalLink,
@@ -24,6 +21,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ViewModeToggle } from "@/components/common/ViewModeToggle";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -366,16 +365,11 @@ function MenuManagementContent() {
         {/* Filter and Operational Toolbar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search dish by name, recipe or ingredient..."
-              className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-900 bg-stone-50/50"
-            />
-          </div>
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search dish by name, recipe or ingredient..."
+          />
 
           {/* Dietary Filter Buttons */}
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -443,30 +437,7 @@ function MenuManagementContent() {
             </select>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center border border-stone-200 rounded-xl p-1 bg-stone-50/50">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-lg transition-all ${
-                  viewMode === "grid"
-                    ? "bg-emerald-950 text-white shadow-sm"
-                    : "text-stone-400 hover:text-stone-700"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-lg transition-all ${
-                  viewMode === "table"
-                    ? "bg-emerald-950 text-white shadow-sm"
-                    : "text-stone-400 hover:text-stone-700"
-                }`}
-                title="Table View"
-              >
-                <ListIcon className="w-4 h-4" />
-              </button>
-            </div>
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
         </div>
       </div>
