@@ -305,8 +305,8 @@ export function OrderDetailModal({
                 {/* Billing Summary */}
                 <div className="p-4 bg-gray-50/60 border-t border-gray-100 space-y-2 text-xs">
                   <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span className="font-mono">₹{order.subtotal.toFixed(2)}</span>
+                    <span>Subtotal (Base)</span>
+                    <span className="font-mono">₹{(order.subtotal - order.tax).toFixed(2)}</span>
                   </div>
                   {order.discount > 0 && (
                     <div className="flex justify-between text-emerald-700 font-semibold">

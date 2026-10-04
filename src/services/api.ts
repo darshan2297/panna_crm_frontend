@@ -61,8 +61,17 @@ import {
   IntegrationLog,
   IntegrationHealthSummary,
   WebhookSimulateRequest,
+  BusinessHoursRead,
+  BusinessHoursConfig,
+  BusinessHourDay,
+  BusinessHourDayUpdate,
+  BusinessHoliday,
+  BusinessHolidayInput,
   AuditLog,
   AuditStats,
+  StorefrontConfig,
+  PaymentMethodConfig,
+  PromoCode,
 } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -845,6 +854,59 @@ class ApiClient {
     return this.request<APIResponse<IntegrationLog[]>>(`/integrations/logs?limit=${limit}`);
   }
 
+  // ── Phase 15: Business Hours & Holidays ───────────────────────────
+  async getBusinessHours(): Promise<APIResponse<BusinessHoursRead>> {
+    return this.request<APIResponse<BusinessHoursRead>>("/business-hours");
+  }
+
+  async getPublicShopStatus(): Promise<APIResponse<any>> {
+    return this.request<APIResponse<any>>("/public/shop-status");
+  }
+
+  async updateBusinessHoursConfig(
+    payload: Partial<BusinessHoursConfig>
+  ): Promise<APIResponse<BusinessHoursConfig>> {
+    return this.request<APIResponse<BusinessHoursConfig>>("/business-hours/config", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateBusinessHourDay(
+    dayOfWeek: number,
+    payload: BusinessHourDayUpdate
+  ): Promise<APIResponse<BusinessHourDay>> {
+    return this.request<APIResponse<BusinessHourDay>>(`/business-hours/days/${dayOfWeek}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async createBusinessHoliday(
+    payload: BusinessHolidayInput
+  ): Promise<APIResponse<BusinessHoliday>> {
+    return this.request<APIResponse<BusinessHoliday>>("/business-hours/holidays", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateBusinessHoliday(
+    id: number,
+    payload: Partial<BusinessHolidayInput>
+  ): Promise<APIResponse<BusinessHoliday>> {
+    return this.request<APIResponse<BusinessHoliday>>(`/business-hours/holidays/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteBusinessHoliday(id: number): Promise<APIResponse<any>> {
+    return this.request<APIResponse<any>>(`/business-hours/holidays/${id}`, {
+      method: "DELETE",
+    });
+  }
+
   // ── Phase 14: Audit & Compliance ───────────────────────────────────
   async getAuditLogs(params?: {
     page?: number;
@@ -865,6 +927,64 @@ class ApiClient {
 
   async getAuditStats(): Promise<APIResponse<AuditStats>> {
     return this.request<APIResponse<AuditStats>>("/audit/stats");
+  }
+
+  async getStorefrontConfig(): Promise<APIResponse<StorefrontConfig>> {
+    return this.request<APIResponse<StorefrontConfig>>("/website/config");
+  }
+
+  async updateStorefrontConfig(payload: Partial<StorefrontConfig>): Promise<APIResponse<StorefrontConfig>> {
+    return this.request<APIResponse<StorefrontConfig>>("/website/config", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getPaymentMethods(): Promise<APIResponse<PaymentMethodConfig[]>> {
+    return this.request<APIResponse<PaymentMethodConfig[]>>("/website/payment-methods");
+  }
+
+  async createPaymentMethod(payload: { key: string; label: string; description?: string; enabled?: boolean; display_order?: number }): Promise<APIResponse<PaymentMethodConfig>> {
+    return this.request<APIResponse<PaymentMethodConfig>>("/website/payment-methods", { method: "POST", body: JSON.stringify(payload) });
+  }
+
+  async updatePaymentMethod(id: number, payload: Partial<PaymentMethodConfig>): Promise<APIResponse<PaymentMethodConfig>> {
+    return this.request<APIResponse<PaymentMethodConfig>>(`/website/payment-methods/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  }
+
+  async deletePaymentMethod(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/website/payment-methods/${id}`, { method: "DELETE" });
+  }
+
+  async getPromoCodes(): Promise<APIResponse<PromoCode[]>> {
+    return this.request<APIResponse<PromoCode[]>>("/website/promocodes");
+  }
+
+  async createPromoCode(payload: Partial<PromoCode>): Promise<APIResponse<PromoCode>> {
+    return this.request<APIResponse<PromoCode>>("/website/promocodes", { method: "POST", body: JSON.stringify(payload) });
+  }
+
+  async updatePromoCode(id: number, payload: Partial<PromoCode>): Promise<APIResponse<PromoCode>> {
+    return this.request<APIResponse<PromoCode>>(`/website/promocodes/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  }
+
+  async deletePromoCode(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/website/promocodes/${id}`, { method: "DELETE" });
+  }
+
+  async uploadWebsiteImage(file: File): Promise<APIResponse<{ url: string }>> {
+    const token = typeof window !== "undefined" ? localStorage.getItem("panna_crm_token") : null;
+    const form = new FormData();
+    form.append("file", file);
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const res = await fetch(`${base}/website/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || data.message || "Upload failed");
+    return data;
   }
 }
 

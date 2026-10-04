@@ -323,6 +323,7 @@ export interface MenuItemPortion {
   serves_persons?: string | null;
   cost_price: number;
   base_price: number;
+  original_price?: number | null;
   zomato_price: number;
   swiggy_price: number;
   is_available: boolean;
@@ -336,6 +337,7 @@ export interface MenuItemPortionInput {
   serves_persons?: string;
   cost_price: number;
   base_price: number;
+  original_price?: number;
   zomato_price?: number;
   swiggy_price?: number;
   is_available?: boolean;
@@ -371,6 +373,8 @@ export interface MenuItem {
   spice_level: "MILD" | "MEDIUM" | "SPICY" | "EXTRA_SPICY" | string;
   preparation_time_minutes: number;
   image_url?: string | null;
+  badge?: string | null;
+  metadata_json?: string | null;
   is_available: boolean;
   is_active: boolean;
   display_order: number;
@@ -388,6 +392,8 @@ export interface MenuItemInput {
   spice_level: string;
   preparation_time_minutes: number;
   image_url?: string;
+  badge?: string;
+  metadata_json?: string;
   is_available?: boolean;
   is_active?: boolean;
   display_order?: number;
@@ -1017,6 +1023,54 @@ export interface WebhookSimulateRequest {
   total_amount?: number;
 }
 
+// ── Phase 15: Business Hours & Holidays ───────────────────────────
+export interface BusinessHourDay {
+  id: number;
+  day_of_week: number;
+  day_name: string;
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+}
+
+export interface BusinessHourDayUpdate {
+  is_open?: boolean;
+  open_time?: string;
+  close_time?: string;
+}
+
+export interface BusinessHoursConfig {
+  auto_schedule_enabled: boolean;
+  force_open_now: boolean;
+  timezone: string;
+  holiday_message?: string | null;
+  updated_at: string;
+}
+
+export interface BusinessHoliday {
+  id: number;
+  holiday_date: string;
+  is_closed: boolean;
+  open_time?: string | null;
+  close_time?: string | null;
+  reason?: string | null;
+  created_at: string;
+}
+
+export interface BusinessHolidayInput {
+  holiday_date: string;
+  is_closed?: boolean;
+  open_time?: string | null;
+  close_time?: string | null;
+  reason?: string | null;
+}
+
+export interface BusinessHoursRead {
+  config: BusinessHoursConfig;
+  days: BusinessHourDay[];
+  holidays: BusinessHoliday[];
+}
+
 // ── Phase 14: Audit & Compliance ───────────────────────────────────
 export interface AuditLog {
   id: number;
@@ -1038,3 +1092,57 @@ export interface AuditStats {
 }
 
 
+
+// ── Phase 16: Website Storefront ───────────────────────────────────
+export interface StorefrontConfig {
+  id: number;
+  logo_url: string | null;
+  banner_url: string | null;
+  banner_mobile_url: string | null;
+  gift_section_enabled: boolean;
+  gift_bg_url: string | null;
+  bulk_bg_url: string | null;
+  delivery_enabled: boolean;
+  pickup_enabled: boolean;
+  delivery_fee: number;
+  free_delivery_enabled: boolean;
+  free_delivery_threshold: number;
+  brand_name: string | null;
+  brand_tagline: string | null;
+  address_line: string | null;
+  area: string | null;
+  city: string | null;
+  pincode: string | null;
+  google_maps_url: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  operating_hours: string | null;
+}
+
+export interface PaymentMethodConfig {
+  id: number;
+  key: string;
+  label: string;
+  description: string | null;
+  enabled: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PromoCode {
+  id: number;
+  code: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  discount_type: string;
+  discount_value: number;
+  free_item_name: string | null;
+  min_order_value: number;
+  badge: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}

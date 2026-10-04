@@ -13,6 +13,7 @@ import {
   UserCircle2,
   BarChart3,
   Globe2,
+  Ticket,
   Settings,
   ChevronDown,
   ChevronRight,
@@ -20,6 +21,7 @@ import {
   ChevronLeft,
   Flame,
   Truck,
+  Clock,
 } from "lucide-react";
 import { useUiStore } from "@/store/uiStore";
 import { cn } from "@/lib/utils";
@@ -119,9 +121,19 @@ const navItems: NavItemConfig[] = [
     icon: Flame,
   },
   {
-    title: "Website",
-    href: "/website",
+    title: "Business Hours",
+    href: "/business-hours",
+    icon: Clock,
+  },
+  {
+    title: "Website Config",
+    href: "/website-config",
     icon: Globe2,
+  },
+  {
+    title: "Promo Codes",
+    href: "/promocodes",
+    icon: Ticket,
   },
   {
     title: "Settings",

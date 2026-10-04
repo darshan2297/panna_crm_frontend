@@ -57,6 +57,7 @@ export function MenuItemModal({
   const [spiceLevel, setSpiceLevel] = useState("MEDIUM");
   const [prepTime, setPrepTime] = useState(25);
   const [imageUrl, setImageUrl] = useState("");
+  const [badge, setBadge] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
   const [portions, setPortions] = useState<MenuItemPortionInput[]>([{ ...DEFAULT_PORTION }]);
 
@@ -72,6 +73,7 @@ export function MenuItemModal({
       setSpiceLevel(initialItem.spice_level);
       setPrepTime(initialItem.preparation_time_minutes);
       setImageUrl(initialItem.image_url || "");
+      setBadge(initialItem.badge || "");
       setIsAvailable(initialItem.is_available);
       if (initialItem.portions && initialItem.portions.length > 0) {
         setPortions(
@@ -96,6 +98,7 @@ export function MenuItemModal({
       setSpiceLevel("MEDIUM");
       setPrepTime(25);
       setImageUrl("");
+      setBadge("");
       setIsAvailable(true);
       setPortions([{ ...DEFAULT_PORTION }]);
     }
@@ -169,6 +172,7 @@ export function MenuItemModal({
       spice_level: spiceLevel,
       preparation_time_minutes: Number(prepTime),
       image_url: imageUrl.trim() || undefined,
+      badge: badge.trim() || undefined,
       is_available: isAvailable,
       portions: portions.map((p) => ({
         id: p.id,
@@ -177,6 +181,7 @@ export function MenuItemModal({
         serves_persons: p.serves_persons ? p.serves_persons.trim() : undefined,
         cost_price: Number(p.cost_price) || 0,
         base_price: Number(p.base_price),
+        original_price: p.original_price ? Number(p.original_price) : undefined,
         zomato_price: p.zomato_price ? Number(p.zomato_price) : undefined,
         swiggy_price: p.swiggy_price ? Number(p.swiggy_price) : undefined,
         is_available: p.is_available ?? true,
@@ -257,6 +262,34 @@ export function MenuItemModal({
               className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-panna-green-600"
             />
           </div>
+        </div>
+
+        {/* Badge tag */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Badge Tag (e.g. Best Seller, New, Premium, Save 17%)
+          </label>
+          <input
+            type="text"
+            value={badge}
+            onChange={(e) => setBadge(e.target.value)}
+            placeholder="Best Seller"
+            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-panna-green-600"
+          />
+        </div>
+
+        {/* Image URL */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Image URL (from Website Config upload or /products/... path)
+          </label>
+          <input
+            type="text"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="/media/uploads/xyz.jpg or /products/veg-dum.jpg"
+            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-panna-green-600"
+          />
         </div>
 
         {/* Description */}
