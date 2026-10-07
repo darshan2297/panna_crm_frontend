@@ -29,14 +29,7 @@ interface CreatePOModalProps {
   availableSuggestions?: RestockSuggestionItem[];
 }
 
-const PRESET_SUPPLIERS = [
-  "Panna Royal Spices & Grain Wholesale",
-  "Delhi Poultry & Meat Suppliers",
-  "Panna Dairy & Pure Ghee Co.",
-  "Classic Food Packaging & Eco Containers",
-  "Fresh Produce & Green Herb Mandi",
-  "Custom Supplier...",
-];
+const CUSTOM_SUPPLIER_OPTION = "Custom Supplier...";
 
 export function CreatePOModal({
   isOpen,
@@ -45,7 +38,8 @@ export function CreatePOModal({
   preselectedItems = [],
   availableSuggestions = [],
 }: CreatePOModalProps) {
-  const [supplierName, setSupplierName] = useState(PRESET_SUPPLIERS[0]);
+  const [supplierOptions, setSupplierOptions] = useState<string[]>([]);
+  const [supplierName, setSupplierName] = useState("");
   const [customSupplier, setCustomSupplier] = useState("");
   const [expectedDate, setExpectedDate] = useState(() => {
     const d = new Date();
@@ -56,6 +50,22 @@ export function CreatePOModal({
   const [items, setItems] = useState<RestockOrderItemInput[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch real suppliers from the database
+  useEffect(() => {
+    if (!isOpen) return;
+    api
+      .getRestockSuppliers()
+      .then((res) => {
+        const names = res.data || [];
+        setSupplierOptions([...names, CUSTOM_SUPPLIER_OPTION]);
+        setSupplierName((prev) => (prev && names.includes(prev) ? prev : names[0] || ""));
+      })
+      .catch((err) => {
+        console.error("Failed to load suppliers", err);
+        setSupplierOptions([CUSTOM_SUPPLIER_OPTION]);
+      });
+  }, [isOpen]);
 
   // Initialize items from preselected suggestions
   useEffect(() => {
@@ -78,6 +88,9 @@ export function CreatePOModal({
         const firstSupplier = preselectedItems[0]?.supplier || preselectedItems[0]?.supplier_name;
         if (firstSupplier) {
           setSupplierName(firstSupplier);
+          setSupplierOptions((prev) =>
+            prev.includes(firstSupplier) ? prev : [firstSupplier, ...prev]
+          );
         }
       } else {
         setItems([]);
@@ -165,7 +178,7 @@ export function CreatePOModal({
     }
 
     const effectiveSupplier =
-      supplierName === "Custom Supplier..." ? customSupplier.trim() : supplierName;
+      supplierName === CUSTOM_SUPPLIER_OPTION ? customSupplier.trim() : supplierName;
 
     if (!effectiveSupplier) {
       setError("Please enter a valid supplier name.");
@@ -234,13 +247,13 @@ export function CreatePOModal({
               onChange={(e) => setSupplierName(e.target.value)}
               className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-800 focus:bg-white"
             >
-              {PRESET_SUPPLIERS.map((s) => (
+              {supplierOptions.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
             </select>
-            {supplierName === "Custom Supplier..." && (
+            {supplierName === CUSTOM_SUPPLIER_OPTION && (
               <input
                 type="text"
                 placeholder="Enter custom supplier name"

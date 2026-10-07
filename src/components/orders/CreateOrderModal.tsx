@@ -23,15 +23,8 @@ interface CreateOrderModalProps {
   onSubmit: (payload: CreateOrderInput) => Promise<void>;
 }
 
-// Preset popular items for cloud kitchen quick-entry
-const POPULAR_MENU_ITEMS = [
-  { name: "Panna Paneer Dum Biryani", portion: "500g", price: 320.0 },
-  { name: "Panna Veg Dum Biryani", portion: "500g", price: 260.0 },
-  { name: "Panna Royal Dum Biryani", portion: "750g", price: 420.0 },
-  { name: "Panna Hyderabadi Dum Biryani", portion: "1kg", price: 550.0 },
-  { name: "Panna Special Raita", portion: "250g", price: 60.0 },
-  { name: "Shahi Gulab Jamun (2 pcs)", portion: "Standard", price: 90.0 },
-];
+// Fetch real menu items from API instead of hardcoded presets
+import { api } from "@/services/api";
 
 export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModalProps) {
   const [platform, setPlatform] = useState<OrderPlatform>("WEBSITE");
@@ -44,15 +37,40 @@ export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModal
   const [deliveryFee, setDeliveryFee] = useState<number>(40);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("PAID");
 
-  const [items, setItems] = useState<CreateOrderItemInput[]>([
-    { item_name: "Panna Paneer Dum Biryani", portion_size: "500g", quantity: 1, unit_price: 320.0 },
-  ]);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [loadingMenu, setLoadingMenu] = useState(false);
+
+  const [items, setItems] = useState<CreateOrderItemInput[]>([]);
 
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [customPortion, setCustomPortion] = useState("500g");
-  const [customPrice, setCustomPrice] = useState(320.0);
+  const [customPrice, setCustomPrice] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch real menu items when modal opens
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setLoadingMenu(true);
+    api.getMenuItems({ is_available: true, is_active: true })
+      .then((res) => {
+        const items = res.data || [];
+        setMenuItems(items);
+        if (items.length > 0) {
+          const first = items[0];
+          const portion = first.portions?.[0];
+          setItems([{
+            item_name: first.name,
+            portion_size: portion?.portion_size || "500g",
+            quantity: 1,
+            unit_price: portion?.original_price || portion?.base_price || 0,
+          }]);
+          setCustomPrice(portion?.original_price || portion?.base_price || 0);
+        }
+      })
+      .catch(() => setMenuItems([]))
+      .finally(() => setLoadingMenu(false));
+  }, [isOpen]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -71,14 +89,16 @@ export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModal
   if (!isOpen) return null;
 
   const handleAddItemFromPreset = () => {
-    const preset = POPULAR_MENU_ITEMS[selectedPreset];
+    const menuItem = menuItems[selectedPreset];
+    if (!menuItem) return;
+    const portion = menuItem.portions?.[0];
     setItems([
       ...items,
       {
-        item_name: preset.name,
-        portion_size: customPortion || preset.portion,
+        item_name: menuItem.name,
+        portion_size: customPortion || portion?.portion_size || "500g",
         quantity: 1,
-        unit_price: Number(customPrice) || preset.price,
+        unit_price: Number(customPrice) || portion?.original_price || portion?.base_price || 0,
       },
     ]);
   };
@@ -102,8 +122,11 @@ export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModal
   // Calculations
   const subtotal = items.reduce((acc, curr) => acc + curr.unit_price * curr.quantity, 0);
   const taxable = Math.max(0, subtotal - (Number(discount) || 0));
-  const tax = Number((taxable * 0.05).toFixed(2));
-  const grandTotal = Number((taxable + (Number(deliveryFee) || 0) + tax).toFixed(2));
+  // GST is inclusive in item prices
+  const gstRate = 0.05;
+  const tax = Number((taxable * gstRate / (1 + gstRate)).toFixed(2));
+  const baseSubtotal = Number((taxable - tax).toFixed(2));
+  const grandTotal = Number((taxable + (Number(deliveryFee) || 0)).toFixed(2));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,28 +311,51 @@ export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModal
                 onChange={(e) => {
                   const idx = Number(e.target.value);
                   setSelectedPreset(idx);
-                  setCustomPortion(POPULAR_MENU_ITEMS[idx].portion);
-                  setCustomPrice(POPULAR_MENU_ITEMS[idx].price);
+                  const item = menuItems[idx];
+                  if (item) {
+                    const portion = item.portions?.[0];
+                    setCustomPortion(portion?.portion_size || "500g");
+                    setCustomPrice(portion?.original_price || portion?.base_price || 0);
+                  }
                 }}
                 className="grow px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white"
               >
-                {POPULAR_MENU_ITEMS.map((item, idx) => (
+                {menuItems.map((item, idx) => (
                   <option key={idx} value={idx}>
-                    {item.name} (₹{item.price})
+                    {item.name} (₹{item.portions?.[0]?.original_price || item.portions?.[0]?.base_price || 0})
                   </option>
                 ))}
               </select>
 
               <select
                 value={customPortion}
-                onChange={(e) => setCustomPortion(e.target.value)}
+                onChange={(e) => {
+                  const newPortion = e.target.value;
+                  setCustomPortion(newPortion);
+                  // Update price to match the selected portion
+                  const item = menuItems[selectedPreset];
+                  if (item) {
+                    const matchingPortion = item.portions?.find((p: any) => p.portion_size === newPortion);
+                    if (matchingPortion) {
+                      setCustomPrice(matchingPortion.original_price || matchingPortion.base_price || 0);
+                    }
+                  }
+                }}
                 className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 bg-white"
               >
-                <option value="250g">250g</option>
-                <option value="500g">500g</option>
-                <option value="750g">750g</option>
-                <option value="1kg">1kg</option>
-                <option value="Standard">Standard</option>
+                {menuItems[selectedPreset]?.portions?.map((p: any) => (
+                  <option key={p.portion_size} value={p.portion_size}>
+                    {p.portion_size}
+                  </option>
+                )) || (
+                  <>
+                    <option value="250g">250g</option>
+                    <option value="500g">500g</option>
+                    <option value="750g">750g</option>
+                    <option value="1kg">1kg</option>
+                    <option value="Standard">Standard</option>
+                  </>
+                )}
               </select>
 
               <div className="relative w-24">
@@ -400,8 +446,16 @@ export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModal
             {/* Bill Summary Calculations */}
             <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200 space-y-2 text-xs">
               <div className="flex justify-between text-gray-600">
-                <span>Items Subtotal:</span>
-                <span className="font-mono font-medium">₹{subtotal.toFixed(2)}</span>
+                <span>Items Subtotal (excl. GST):</span>
+                <span className="font-mono font-medium">₹{baseSubtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>GST (5%):</span>
+                <span className="font-mono">₹{tax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Items Total (incl. GST):</span>
+                <span className="font-mono font-medium">₹{taxable.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-gray-600">
                 <span>Discount (₹):</span>
@@ -422,10 +476,6 @@ export function CreateOrderModal({ isOpen, onClose, onSubmit }: CreateOrderModal
                   onChange={(e) => setDeliveryFee(Number(e.target.value))}
                   className="w-16 px-1.5 py-0.5 text-right font-mono border border-gray-200 rounded"
                 />
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>GST (5%):</span>
-                <span className="font-mono">₹{tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t border-gray-200">
                 <span>Grand Total:</span>

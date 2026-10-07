@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Panna Biryani CRM — Operations & Management",
   description: "Internal CRM, Kitchen Display & Order Management System for Panna Biryani",
+  icons: {
+    icon: "/brand/logo.jpg",
+    shortcut: "/brand/logo.jpg",
+    apple: "/brand/logo.jpg",
+  },
 };
 
 export default function RootLayout({

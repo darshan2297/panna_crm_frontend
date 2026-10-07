@@ -54,6 +54,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   initAuth: () => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("panna_crm_token");
+      const refreshToken = localStorage.getItem("panna_crm_refresh_token");
       const userStr = localStorage.getItem("panna_crm_user");
       if (token && userStr) {
         try {
@@ -61,6 +62,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({
             user,
             token,
+            refreshToken: refreshToken || null,
             isAuthenticated: true,
             isLoading: false,
           });

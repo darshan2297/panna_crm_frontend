@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/Badge";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreatePOModal } from "@/components/restock/CreatePOModal";
 import { PODetailModal } from "@/components/restock/PODetailModal";
@@ -276,9 +276,6 @@ function RestockManagementContent() {
               <h1 className="text-2xl font-black text-slate-900 tracking-tight font-serif">
                 Restock & Kitchen Alerts
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200 uppercase tracking-wider">
-                Phase 9
-              </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               Automated deficit detection, smart purchase orders & multi-channel supplier dispatches.
@@ -624,12 +621,7 @@ function RestockManagementContent() {
           {activeTab === "planner" && (
             <div className="space-y-4">
               {loading ? (
-                <div className="py-16 text-center">
-                  <RefreshCw className="w-7 h-7 animate-spin text-emerald-800 mx-auto mb-2" />
-                  <p className="text-xs text-stone-500 font-medium">
-                    Calculating kitchen stock deficits...
-                  </p>
-                </div>
+                <TableSkeleton rows={6} columns={5} />
               ) : filteredSuggestions.length === 0 ? (
                 <div className="py-16 text-center border border-dashed border-stone-200 rounded-2xl bg-stone-50">
                   <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
@@ -800,12 +792,7 @@ function RestockManagementContent() {
           {activeTab === "purchase_orders" && (
             <div className="space-y-4">
               {loading ? (
-                <div className="py-16 text-center">
-                  <RefreshCw className="w-7 h-7 animate-spin text-emerald-800 mx-auto mb-2" />
-                  <p className="text-xs text-stone-500 font-medium">
-                    Loading purchase orders...
-                  </p>
-                </div>
+                <TableSkeleton rows={6} columns={6} />
               ) : filteredOrders.length === 0 ? (
                 <div className="py-16 text-center border border-dashed border-stone-200 rounded-2xl bg-stone-50">
                   <Truck className="w-10 h-10 text-stone-400 mx-auto mb-2" />
@@ -956,12 +943,7 @@ function RestockManagementContent() {
           {activeTab === "notifications" && (
             <div className="space-y-4">
               {loading ? (
-                <div className="py-16 text-center">
-                  <RefreshCw className="w-7 h-7 animate-spin text-emerald-800 mx-auto mb-2" />
-                  <p className="text-xs text-stone-500 font-medium">
-                    Loading notification logs...
-                  </p>
-                </div>
+                <TableSkeleton rows={6} columns={5} />
               ) : filteredNotifications.length === 0 ? (
                 <div className="py-16 text-center border border-dashed border-stone-200 rounded-2xl bg-stone-50">
                   <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
@@ -1175,7 +1157,7 @@ function RestockManagementContent() {
 
 export default function RestockPage() {
   return (
-    <React.Suspense fallback={<LoadingState message="Loading restock workspace..." />}>
+    <React.Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={6} /></div>}>
       <RestockManagementContent />
     </React.Suspense>
   );

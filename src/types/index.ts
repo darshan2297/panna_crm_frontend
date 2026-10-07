@@ -1143,6 +1143,66 @@ export interface PromoCode {
   min_order_value: number;
   badge: string | null;
   active: boolean;
+  valid_from: string | null;
+  valid_until: string | null;
+  max_uses: number | null;
+  used_count: number;
+  per_user_limit: number;
+  applicable_items: string[] | null;
+  minimum_order_items: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Review {
+  id: number;
+  customer_name: string;
+  location: string | null;
+  rating: number;
+  review_text: string;
+  verified_order: boolean;
+  dish_loved: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FAQ {
+  id: number;
+  question: string;
+  answer: string;
+  category: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeliveryArea {
+  id: number;
+  name: string;
+  pincode: string;
+  delivery_fee: number;
+  estimated_minutes: number;
+  min_order: number;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactInquiry {
+  id: number;
+  inquiry_type: "contact" | "bulk";
+  name: string;
+  phone: string | null;
+  email: string | null;
+  subject: string | null;
+  message: string | null;
+  details_json: string | null;
+  is_read: boolean;
+  is_resolved: boolean;
   created_at: string;
   updated_at: string;
 }

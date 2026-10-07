@@ -228,8 +228,8 @@ function BusinessHoursContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2 shadow-xs">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
                   <CardTitle className="text-base font-serif">Automatic Schedule</CardTitle>
                   <CardDescription>
                     When enabled, the site opens and closes automatically as per the weekly timetable
@@ -458,8 +458,8 @@ function BusinessHoursContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-1 shadow-xs">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <CalendarPlus className="w-4 h-4 text-panna-green-900" />
+              <div className="flex items-start gap-2.5">
+                <CalendarPlus className="w-4 h-4 text-panna-green-900 mt-0.5 flex-shrink-0" />
                 <div>
                   <CardTitle className="text-base font-serif">Add Holiday / Override</CardTitle>
                   <CardDescription>Close for a day or set custom hours</CardDescription>
@@ -540,8 +540,8 @@ function BusinessHoursContent() {
 
           <Card className="lg:col-span-2 shadow-xs">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <CalendarOff className="w-4 h-4 text-panna-green-900" />
+              <div className="flex items-start gap-2.5">
+                <CalendarOff className="w-4 h-4 text-panna-green-900 mt-0.5 flex-shrink-0" />
                 <div>
                   <CardTitle className="text-base font-serif">Holiday Calendar</CardTitle>
                   <CardDescription>Upcoming closures and date-specific overrides</CardDescription>

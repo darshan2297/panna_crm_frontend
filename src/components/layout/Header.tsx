@@ -16,6 +16,7 @@ import {
 import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/services/api";
+import { getSocket } from "@/services/socket";
 import { Badge } from "../ui/Badge";
 import { NotificationDrawer } from "../notifications/NotificationDrawer";
 
@@ -25,25 +26,6 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const [backendHealth, setBackendHealth] = useState<"checking" | "online" | "offline">("checking");
-
-  useEffect(() => {
-    async function checkStatus() {
-      try {
-        const res = await api.getHealth();
-        if (res && res.status === "online") {
-          setBackendHealth("online");
-        } else {
-          setBackendHealth("offline");
-        }
-      } catch (e) {
-        setBackendHealth("offline");
-      }
-    }
-
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -59,10 +41,74 @@ export function Header() {
     }
   };
 
+  // Socket-driven status & notification badge.
+  // While the socket is connected there is NO polling: the socket connection
+  // itself proves the backend is up, and "notification_created" events keep
+  // the unread badge in sync. HTTP polling is only a fallback used when the
+  // socket is disconnected.
   useEffect(() => {
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+    async function checkStatus() {
+      try {
+        const res = await api.getHealth();
+        setBackendHealth(res && res.status === "online" ? "online" : "offline");
+      } catch (e) {
+        setBackendHealth("offline");
+      }
+    }
+
+    const startFallbackPolling = () => {
+      if (fallbackInterval) return;
+      fallbackInterval = setInterval(() => {
+        checkStatus();
+        fetchUnreadCount();
+      }, 30000);
+    };
+    const stopFallbackPolling = () => {
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+      }
+    };
+
+    const socket = getSocket();
+
+    const onConnect = () => {
+      setBackendHealth("online");
+      stopFallbackPolling();
+    };
+    const onDisconnect = () => {
+      setBackendHealth("offline");
+      startFallbackPolling();
+    };
+    const onNotification = (payload: any) => {
+      if (payload && typeof payload.unread_count === "number") {
+        setUnreadCount(payload.unread_count);
+      } else {
+        fetchUnreadCount();
+      }
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("notification_created", onNotification);
+
+    if (socket.connected) {
+      onConnect();
+    } else {
+      checkStatus();
+      startFallbackPolling();
+    }
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 20000);
-    return () => clearInterval(interval);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("notification_created", onNotification);
+      stopFallbackPolling();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = async () => {

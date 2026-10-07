@@ -33,7 +33,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ViewModeToggle } from "@/components/common/ViewModeToggle";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InventoryItemModal } from "@/components/inventory/InventoryItemModal";
 import { StockAdjustmentModal } from "@/components/inventory/StockAdjustmentModal";
@@ -201,7 +201,6 @@ function InventoryManagementContent() {
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
               Kitchen Stock & Supply Chain
             </span>
-            <span className="text-xs text-stone-400 font-medium">Phase 7 Live</span>
           </div>
           <h1 className="text-2xl font-black text-emerald-950 tracking-tight flex items-center gap-2">
             <Boxes className="w-7 h-7 text-emerald-900" />
@@ -485,7 +484,7 @@ function InventoryManagementContent() {
 
       {/* Main Content Area */}
       {loading ? (
-        <LoadingState message="Loading inventory balances and stock levels..." />
+        <TableSkeleton rows={6} columns={8} />
       ) : activeTab === "all" ? (
         items.length === 0 ? (
           <EmptyState
@@ -644,10 +643,10 @@ function InventoryManagementContent() {
                   <tr>
                     <th className="px-5 py-3.5">Ingredient Name</th>
                     <th className="px-4 py-3.5">Category</th>
-                    <th className="px-4 py-3.5">Current Stock</th>
-                    <th className="px-4 py-3.5">Safety / Reorder</th>
-                    <th className="px-4 py-3.5">Cost / Unit</th>
-                    <th className="px-4 py-3.5">Valuation</th>
+                    <th className="px-4 py-3.5 text-right">Current Stock</th>
+                    <th className="px-4 py-3.5 text-right">Safety / Reorder</th>
+                    <th className="px-4 py-3.5 text-right">Cost / Unit</th>
+                    <th className="px-4 py-3.5 text-right">Valuation</th>
                     <th className="px-4 py-3.5">Location</th>
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
@@ -1159,7 +1158,7 @@ function InventoryManagementContent() {
 export default function InventoryPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<LoadingState message="Loading inventory module..." />}>
+      <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={8} /></div>}>
         <InventoryManagementContent />
       </Suspense>
     </DashboardLayout>

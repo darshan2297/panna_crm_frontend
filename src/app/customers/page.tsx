@@ -28,7 +28,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/Badge";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { api } from "@/services/api";
 import {
@@ -215,8 +215,8 @@ function CustomerDrawer({
         </div>
 
         {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <LoadingState message="Loading customer..." />
+          <div className="flex-1 p-6">
+            <TableSkeleton rows={5} columns={4} />
           </div>
         ) : !customer ? (
           <div className="flex-1 flex items-center justify-center text-sm text-stone-500">Customer not found.</div>
@@ -591,7 +591,7 @@ function CustomersPageContent() {
 
             {/* Table */}
             {loading ? (
-              <LoadingState message="Loading customers..." />
+              <TableSkeleton rows={6} columns={6} />
             ) : customers.length === 0 ? (
               <EmptyState
                 title="No Customers Found"
@@ -640,7 +640,7 @@ function CustomersPageContent() {
                           <td className="px-4 py-3">
                             <button
                               onClick={() => setSelectedCustomerId(c.id)}
-                              className="invisible group-hover:visible transition-opacity px-3 py-1.5 bg-emerald-900 text-white rounded-lg text-xs font-semibold hover:bg-emerald-800"
+                              className="px-3 py-1.5 bg-emerald-900 text-white rounded-lg text-xs font-semibold hover:bg-emerald-800 transition-colors"
                             >
                               View
                             </button>
@@ -687,7 +687,7 @@ function CustomersPageContent() {
         {activeTab === "top" && (
           <div className="p-4">
             {loading ? (
-              <LoadingState message="Loading top spenders..." />
+              <TableSkeleton rows={6} columns={5} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {topSpenders.map((c, idx) => (
@@ -746,7 +746,7 @@ function CustomersPageContent() {
               </div>
             </div>
             {loading ? (
-              <LoadingState message="Loading customer history..." />
+              <TableSkeleton rows={6} columns={5} />
             ) : customers.length === 0 ? (
               <EmptyState title="No Results" description="Search for a customer to see their order history." />
             ) : (
@@ -793,7 +793,7 @@ function CustomersPageContent() {
 
 export default function CustomersPage() {
   return (
-    <Suspense fallback={<DashboardLayout><LoadingState message="Loading..." /></DashboardLayout>}>
+    <Suspense fallback={<DashboardLayout><div className="p-8"><TableSkeleton rows={6} columns={6} /></div></DashboardLayout>}>
       <CustomersPageContent />
     </Suspense>
   );

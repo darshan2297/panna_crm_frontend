@@ -72,7 +72,12 @@ import {
   StorefrontConfig,
   PaymentMethodConfig,
   PromoCode,
+  Review,
+  FAQ,
+  DeliveryArea,
+  ContactInquiry,
 } from "@/types";
+import { useAuthStore } from "@/store/authStore";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -80,6 +85,59 @@ class ApiClient {
   private getToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("panna_crm_token");
+  }
+
+  private getRefreshToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("panna_crm_refresh_token");
+  }
+
+  private setTokens(accessToken: string, refreshToken?: string) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("panna_crm_token", accessToken);
+    if (refreshToken) {
+      localStorage.setItem("panna_crm_refresh_token", refreshToken);
+    }
+  }
+
+  private clearTokens() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("panna_crm_token");
+    localStorage.removeItem("panna_crm_refresh_token");
+  }
+
+  /** Attempt to refresh the access token using the stored refresh token. */
+  async refreshAccessToken(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const res = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.access_token) {
+        this.clearTokens();
+        return false;
+      }
+      this.setTokens(data.access_token, data.refresh_token || undefined);
+      // Update auth store
+      const userStr = localStorage.getItem("panna_crm_user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          useAuthStore.getState().setAuth(user, data.access_token, data.refresh_token || refreshToken);
+        } catch {
+          /* ignore */
+        }
+      }
+      return true;
+    } catch {
+      this.clearTokens();
+      return false;
+    }
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -96,10 +154,36 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch(url, {
+      let response = await fetch(url, {
         ...options,
         headers,
       });
+
+      // Auto-refresh on 401 (expired access token) and retry once
+      if (response.status === 401 && !endpoint.includes("/auth/")) {
+        const refreshed = await this.refreshAccessToken();
+        if (refreshed) {
+          const newToken = this.getToken();
+          const retryHeaders: Record<string, string> = {
+            "Content-Type": "application/json",
+            ...(options.headers as Record<string, string>),
+          };
+          if (newToken) {
+            retryHeaders["Authorization"] = `Bearer ${newToken}`;
+          }
+          response = await fetch(url, {
+            ...options,
+            headers: retryHeaders,
+          });
+        } else {
+          // Refresh failed — session truly expired
+          useAuthStore.getState().logout();
+          if (typeof window !== "undefined") {
+            window.location.href = "/login";
+          }
+          throw new Error("Session expired. Please login again.");
+        }
+      }
 
       const data = await response.json();
 
@@ -684,6 +768,10 @@ class ApiClient {
     return this.request<APIResponse<RestockSummary>>("/restock/summary");
   }
 
+  async getRestockSuppliers(): Promise<APIResponse<string[]>> {
+    return this.request<APIResponse<string[]>>("/restock/suppliers");
+  }
+
   async getRestockOrders(params?: {
     status?: string;
     page?: number;
@@ -970,6 +1058,70 @@ class ApiClient {
 
   async deletePromoCode(id: number): Promise<APIResponse<null>> {
     return this.request<APIResponse<null>>(`/website/promocodes/${id}`, { method: "DELETE" });
+  }
+
+  async getReviews(activeOnly = false): Promise<APIResponse<Review[]>> {
+    return this.request<APIResponse<Review[]>>(`/reviews?active_only=${activeOnly}`);
+  }
+
+  async createReview(payload: Partial<Review>): Promise<APIResponse<Review>> {
+    return this.request<APIResponse<Review>>("/reviews", { method: "POST", body: JSON.stringify(payload) });
+  }
+
+  async updateReview(id: number, payload: Partial<Review>): Promise<APIResponse<Review>> {
+    return this.request<APIResponse<Review>>(`/reviews/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  }
+
+  async deleteReview(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/reviews/${id}`, { method: "DELETE" });
+  }
+
+  async getFAQs(activeOnly = false): Promise<APIResponse<FAQ[]>> {
+    return this.request<APIResponse<FAQ[]>>(`/faqs?active_only=${activeOnly}`);
+  }
+
+  async createFAQ(payload: Partial<FAQ>): Promise<APIResponse<FAQ>> {
+    return this.request<APIResponse<FAQ>>("/faqs", { method: "POST", body: JSON.stringify(payload) });
+  }
+
+  async updateFAQ(id: number, payload: Partial<FAQ>): Promise<APIResponse<FAQ>> {
+    return this.request<APIResponse<FAQ>>(`/faqs/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  }
+
+  async deleteFAQ(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/faqs/${id}`, { method: "DELETE" });
+  }
+
+  async getDeliveryAreas(activeOnly = false): Promise<APIResponse<DeliveryArea[]>> {
+    return this.request<APIResponse<DeliveryArea[]>>(`/delivery-areas?active_only=${activeOnly}`);
+  }
+
+  async createDeliveryArea(payload: Partial<DeliveryArea>): Promise<APIResponse<DeliveryArea>> {
+    return this.request<APIResponse<DeliveryArea>>("/delivery-areas", { method: "POST", body: JSON.stringify(payload) });
+  }
+
+  async updateDeliveryArea(id: number, payload: Partial<DeliveryArea>): Promise<APIResponse<DeliveryArea>> {
+    return this.request<APIResponse<DeliveryArea>>(`/delivery-areas/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  }
+
+  async deleteDeliveryArea(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/delivery-areas/${id}`, { method: "DELETE" });
+  }
+
+  async getContactInquiries(params?: { inquiry_type?: string; unresolved_only?: boolean }): Promise<APIResponse<ContactInquiry[]>> {
+    const qs = new URLSearchParams();
+    if (params?.inquiry_type) qs.set("inquiry_type", params.inquiry_type);
+    if (params?.unresolved_only) qs.set("unresolved_only", "true");
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return this.request<APIResponse<ContactInquiry[]>>(`/contact-inquiries${suffix}`);
+  }
+
+  async updateContactInquiry(id: number, payload: { is_read?: boolean; is_resolved?: boolean }): Promise<APIResponse<ContactInquiry>> {
+    return this.request<APIResponse<ContactInquiry>>(`/contact-inquiries/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  }
+
+  async deleteContactInquiry(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/contact-inquiries/${id}`, { method: "DELETE" });
   }
 
   async uploadWebsiteImage(file: File): Promise<APIResponse<{ url: string }>> {

@@ -22,6 +22,10 @@ import {
   Flame,
   Truck,
   Clock,
+  Star,
+  HelpCircle,
+  Inbox,
+  MapPin,
 } from "lucide-react";
 import { useUiStore } from "@/store/uiStore";
 import { cn } from "@/lib/utils";
@@ -36,6 +40,7 @@ interface NavItemConfig {
 }
 
 const navItems: NavItemConfig[] = [
+  { type: "header", title: "Operations" },
   {
     title: "Dashboard",
     href: "/",
@@ -86,15 +91,16 @@ const navItems: NavItemConfig[] = [
     ],
   },
   {
-    title: "Restock & Alerts",
+    title: "Restock",
     href: "/restock",
     icon: Truck,
     children: [
       { title: "Deficit Planner", href: "/restock" },
       { title: "Purchase Orders", href: "/restock?tab=purchase_orders" },
-      { title: "Alerts & Dispatches", href: "/restock?tab=notifications" },
+      { title: "Alerts", href: "/restock?tab=notifications" },
     ],
   },
+  { type: "header", title: "Customers & Team" },
   {
     title: "Customers",
     href: "/customers",
@@ -106,10 +112,16 @@ const navItems: NavItemConfig[] = [
     ],
   },
   {
+    title: "Enquiries",
+    href: "/inquiries",
+    icon: Inbox,
+  },
+  {
     title: "Staff",
     href: "/users",
     icon: Users,
   },
+  { type: "header", title: "Business" },
   {
     title: "Analytics",
     href: "/analytics",
@@ -125,6 +137,7 @@ const navItems: NavItemConfig[] = [
     href: "/business-hours",
     icon: Clock,
   },
+  { type: "header", title: "Configuration" },
   {
     title: "Website Config",
     href: "/website-config",
@@ -134,6 +147,21 @@ const navItems: NavItemConfig[] = [
     title: "Promo Codes",
     href: "/promocodes",
     icon: Ticket,
+  },
+  {
+    title: "Delivery Areas",
+    href: "/delivery-areas",
+    icon: MapPin,
+  },
+  {
+    title: "Reviews",
+    href: "/reviews",
+    icon: Star,
+  },
+  {
+    title: "FAQs",
+    href: "/faqs",
+    icon: HelpCircle,
   },
   {
     title: "Settings",
@@ -189,7 +217,7 @@ function SidebarInner() {
   return (
     <aside
       className={cn(
-        "relative flex flex-col bg-panna-green-950 text-slate-100 border-r border-panna-green-900/60 transition-all duration-300 z-30 select-none",
+        "relative flex flex-col h-screen bg-panna-green-950 text-slate-100 border-r border-panna-green-900/60 transition-all duration-300 z-30 select-none",
         sidebarCollapsed ? "w-20" : "w-64"
       )}
     >
@@ -197,9 +225,7 @@ function SidebarInner() {
       <div className="h-16 flex items-center justify-between px-4 border-b border-panna-green-900/50">
         {!sidebarCollapsed ? (
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-panna-gold-500 to-panna-gold-600 flex items-center justify-center text-slate-950 font-black shadow-md shadow-panna-gold-500/20">
-              <span className="font-serif text-lg tracking-tight">P</span>
-            </div>
+            <img src="/brand/panna-logo.png" alt="Panna logo" className="w-9 h-9 rounded-lg shadow-md shadow-panna-gold-500/20" />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-base tracking-wide text-white font-serif">
@@ -215,9 +241,7 @@ function SidebarInner() {
             </div>
           </Link>
         ) : (
-          <div className="mx-auto w-9 h-9 rounded-lg bg-gradient-to-br from-panna-gold-500 to-panna-gold-600 flex items-center justify-center text-slate-950 font-black">
-            <span className="font-serif text-lg">P</span>
-          </div>
+          <img src="/brand/panna-logo.png" alt="Panna logo" className="mx-auto w-9 h-9 rounded-lg" />
         )}
 
         <button
@@ -236,6 +260,15 @@ function SidebarInner() {
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5 scrollbar-thin scrollbar-thumb-panna-green-800">
         {navItems.map((item) => {
+          if (item.type === "header") {
+            return (
+              <div key={item.title} className="pt-4 pb-1 px-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-panna-green-500">
+                  {item.title}
+                </span>
+              </div>
+            );
+          }
           const Icon = item.icon;
           const isActive =
             pathname === item.href ||

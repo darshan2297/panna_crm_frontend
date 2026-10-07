@@ -396,7 +396,6 @@ function PackagingDashboardContent() {
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                 Packaging & Materials Supply
               </span>
-              <span className="text-xs text-stone-400 font-medium">Phase 8 Live</span>
             </div>
             <h1 className="text-2xl font-black text-emerald-950 tracking-tight flex items-center gap-2">
               <Package className="w-7 h-7 text-emerald-900" />

@@ -267,8 +267,7 @@ function IntegrationsContent() {
                     "h-1.5 w-full",
                     isZomato && "bg-amber-500",
                     isSwiggy && "bg-orange-500",
-                    isWebsite && "bg-emerald-600",
-                    cfg.platform === "ONDC" && "bg-blue-600"
+                    isWebsite && "bg-emerald-600"
                   )}
                 />
 

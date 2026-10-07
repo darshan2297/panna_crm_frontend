@@ -34,6 +34,18 @@ import {
   PLSummaryResponse,
 } from "@/types";
 
+/** A chart data point — either a single day or an aggregated multi-day bucket. */
+interface ChartPoint {
+  date: string;
+  day: string;
+  endDate?: string;
+  total_revenue: number;
+  website_revenue: number;
+  zomato_revenue: number;
+  swiggy_revenue: number;
+  order_count: number;
+}
+
 function AnalyticsContent() {
   const [days, setDays] = useState<number>(30);
   const [activeTab, setActiveTab] = useState<"trends" | "dishes" | "costing" | "segments">("trends");
@@ -53,29 +65,31 @@ function AnalyticsContent() {
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
-    try {
-      const [trendRes, topRes, platRes, velRes, segRes, costRes, plRes] = await Promise.all([
-        api.getSalesTrend(days),
-        api.getTopItems(days, 15, topSortBy),
-        api.getPlatformBreakdown(days),
-        api.getOrderVelocity(days),
-        api.getCustomerSegments(),
-        api.getDishCosting(),
-        api.getPLSummary(days),
-      ]);
+    // allSettled: one failing endpoint must not blank the whole dashboard
+    const [trendRes, topRes, platRes, velRes, segRes, costRes, plRes] = await Promise.allSettled([
+      api.getSalesTrend(days),
+      api.getTopItems(days, 15, topSortBy),
+      api.getPlatformBreakdown(days),
+      api.getOrderVelocity(days),
+      api.getCustomerSegments(),
+      api.getDishCosting(),
+      api.getPLSummary(days),
+    ]);
 
-      if (trendRes.data) setSalesTrend(trendRes.data);
-      if (topRes.data) setTopItems(topRes.data);
-      if (platRes.data) setPlatformBreakdown(platRes.data);
-      if (velRes.data) setOrderVelocity(velRes.data);
-      if (segRes.data) setCustomerSegments(segRes.data);
-      if (costRes.data) setDishCosting(costRes.data);
-      if (plRes.data) setPlSummary(plRes.data);
-    } catch (err) {
-      console.error("Failed to load analytics data:", err);
-    } finally {
-      setLoading(false);
+    const failed = [trendRes, topRes, platRes, velRes, segRes, costRes, plRes]
+      .filter((r) => r.status === "rejected");
+    if (failed.length > 0) {
+      console.error("Some analytics endpoints failed:", failed.map((f: any) => f.reason));
     }
+
+    if (trendRes.status === "fulfilled" && trendRes.value.data) setSalesTrend(trendRes.value.data);
+    if (topRes.status === "fulfilled" && topRes.value.data) setTopItems(topRes.value.data);
+    if (platRes.status === "fulfilled" && platRes.value.data) setPlatformBreakdown(platRes.value.data);
+    if (velRes.status === "fulfilled" && velRes.value.data) setOrderVelocity(velRes.value.data);
+    if (segRes.status === "fulfilled" && segRes.value.data) setCustomerSegments(segRes.value.data);
+    if (costRes.status === "fulfilled" && costRes.value.data) setDishCosting(costRes.value.data);
+    if (plRes.status === "fulfilled" && plRes.value.data) setPlSummary(plRes.value.data);
+    setLoading(false);
   }, [days, topSortBy]);
 
   useEffect(() => {
@@ -83,7 +97,24 @@ function AnalyticsContent() {
   }, [loadAllData]);
 
   // SVG Chart Dimensions
-  const trendItems = salesTrend?.items || [];
+  const rawTrendItems = salesTrend?.items || [];
+  // Bucket long ranges into ~10-day groups so the chart stays readable
+  // (90D → 9 buckets of 10 days instead of 90 cramped daily points)
+  const bucketSize = rawTrendItems.length > 30 ? Math.ceil(rawTrendItems.length / 9) : 1;
+  const trendItems: ChartPoint[] = [];
+  for (let i = 0; i < rawTrendItems.length; i += bucketSize) {
+    const chunk = rawTrendItems.slice(i, i + bucketSize);
+    trendItems.push({
+      date: chunk[0].date,
+      day: chunk[0].day,
+      endDate: chunk[chunk.length - 1].date,
+      total_revenue: chunk.reduce((s, d) => s + d.total_revenue, 0),
+      website_revenue: chunk.reduce((s, d) => s + d.website_revenue, 0),
+      zomato_revenue: chunk.reduce((s, d) => s + d.zomato_revenue, 0),
+      swiggy_revenue: chunk.reduce((s, d) => s + d.swiggy_revenue, 0),
+      order_count: chunk.reduce((s, d) => s + d.order_count, 0),
+    });
+  }
   const maxRevenue = Math.max(...trendItems.map((d) => d.total_revenue), 1000);
   const svgWidth = 720;
   const svgHeight = 220;
@@ -293,7 +324,7 @@ function AnalyticsContent() {
           {[
             { id: "trends", label: "Revenue & Platform Trends", icon: TrendingUp },
             { id: "dishes", label: "Top Dishes & Order Velocity", icon: Flame },
-            { id: "costing", label: "Cost & Profit Analytics (Phase 12)", icon: Percent },
+            { id: "costing", label: "Cost & Profit Analytics", icon: Percent },
             { id: "segments", label: "Customer Segments", icon: Users },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -328,6 +359,7 @@ function AnalyticsContent() {
                       <CardTitle className="text-base font-serif">Daily Multi-Platform Revenue</CardTitle>
                       <CardDescription>
                         Revenue trajectory over past {days} days broken down by channels
+                        {bucketSize > 1 ? ` (grouped in ${bucketSize}-day periods)` : ""}
                       </CardDescription>
                     </div>
                     {/* Legend */}
@@ -353,7 +385,10 @@ function AnalyticsContent() {
                     {hoveredPoint ? (
                       <div className="flex items-center gap-3 bg-slate-50 px-3 py-1 rounded-md border border-slate-200">
                         <span className="font-bold text-slate-900">
-                          {hoveredPoint.day} ({hoveredPoint.date}):
+                          {hoveredPoint.endDate && hoveredPoint.endDate !== hoveredPoint.date
+                            ? `${hoveredPoint.date} → ${hoveredPoint.endDate}`
+                            : `${hoveredPoint.day} (${hoveredPoint.date})`}
+                          :
                         </span>
                         <span className="text-emerald-700 font-semibold">
                           Web: {formatCurrency(hoveredPoint.website_revenue)}

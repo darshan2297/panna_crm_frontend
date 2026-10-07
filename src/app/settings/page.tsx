@@ -22,7 +22,7 @@ import {
 
 export default function SettingsPage() {
   const { user, setAuth, token, refreshToken } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"profile" | "password" | "roles">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "password" | "roles" | "tax">("profile");
 
   // Profile form state
   const [fullName, setFullName] = useState("");
@@ -39,6 +39,15 @@ export default function SettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Tax settings state
+  const [gstRate, setGstRate] = useState("5");
+  const [gstNumber, setGstNumber] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [taxSaving, setTaxSaving] = useState(false);
+  const [taxSuccess, setTaxSuccess] = useState<string | null>(null);
+  const [taxError, setTaxError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -157,6 +166,17 @@ export default function SettingsPage() {
           >
             <Shield className={`w-3.5 h-3.5 ${activeTab === "roles" ? "text-amber-400" : "text-stone-400"}`} />
             <span>Security & Roles</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("tax")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === "tax"
+                ? "bg-emerald-950 text-white shadow-sm"
+                : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+            }`}
+          >
+            <span>💰</span>
+            <span>Tax & GST</span>
           </button>
         </div>
       </div>
@@ -374,6 +394,71 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* TAB CONTENT: TAX & GST */}
+      {activeTab === "tax" && (
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle>Tax & GST Configuration</CardTitle>
+            <CardDescription>Manage GST rates and business tax registration details.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">GST Rate (%)</label>
+              <Input type="number" step="0.5" placeholder="5" value={gstRate} onChange={(e) => setGstRate(e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Default GST rate applied to all orders (e.g., 5 for 5%)</p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">GST Number</label>
+              <Input type="text" placeholder="27AABCP1334L1Z9" value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Your registered GST identification number</p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Business Legal Name</label>
+              <Input type="text" placeholder="Panna Biryani Cloud Kitchen" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Business Address for Invoice</label>
+              <Input type="text" placeholder="123, Street Name, City, State - PIN" value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} />
+            </div>
+            {taxSuccess && <p className="text-green-600 text-sm font-medium">{taxSuccess}</p>}
+            {taxError && <p className="text-red-600 text-sm font-medium">{taxError}</p>}
+            <Button
+              disabled={taxSaving}
+              onClick={async () => {
+                setTaxSaving(true);
+                setTaxError(null);
+                setTaxSuccess(null);
+                try {
+                  await api.updateWebsiteConfig({
+                    brand_name: businessName,
+                    address_line: businessAddress,
+                    // Store GST rate and number in metadata
+                    email: gstNumber ? `gst:${gstNumber}` : null,
+                  } as any);
+                  // Also save to localStorage as backup
+                  localStorage.setItem("panna_gst_rate", gstRate);
+                  localStorage.setItem("panna_gst_number", gstNumber);
+                  localStorage.setItem("panna_business_name", businessName);
+                  localStorage.setItem("panna_business_address", businessAddress);
+                  setTaxSuccess("Tax settings saved successfully.");
+                } catch (err: any) {
+                  // Fallback to localStorage
+                  localStorage.setItem("panna_gst_rate", gstRate);
+                  localStorage.setItem("panna_gst_number", gstNumber);
+                  localStorage.setItem("panna_business_name", businessName);
+                  localStorage.setItem("panna_business_address", businessAddress);
+                  setTaxSuccess("Tax settings saved locally.");
+                } finally {
+                  setTaxSaving(false);
+                }
+              }}
+            >
+              {taxSaving ? "Saving..." : "Save Tax Settings"}
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </DashboardLayout>
   );

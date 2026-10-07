@@ -24,7 +24,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ViewModeToggle } from "@/components/common/ViewModeToggle";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MenuItemModal } from "@/components/menu/MenuItemModal";
 import { CategoryModal } from "@/components/menu/CategoryModal";
@@ -184,9 +184,6 @@ function MenuManagementContent() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-serif flex items-center gap-2">
                 Menu Management & Pricing Rules
-                <span className="text-xs px-2.5 py-0.5 rounded-full font-sans bg-amber-100 text-amber-900 font-semibold border border-amber-200">
-                  Phase 6
-                </span>
               </h1>
               <p className="text-sm text-slate-500">
                 Master dish catalog, portion options, multi-platform margin rules, and 1-click kitchen availability.
@@ -444,7 +441,7 @@ function MenuManagementContent() {
 
       {/* Main Dishes Content Area */}
       {loading ? (
-        <LoadingState />
+        <TableSkeleton rows={6} columns={5} />
       ) : filteredItems.length === 0 ? (
         <EmptyState
           title="No dishes found"
@@ -840,7 +837,7 @@ function MenuManagementContent() {
 export default function MenuPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={5} /></div>}>
         <MenuManagementContent />
       </Suspense>
     </DashboardLayout>

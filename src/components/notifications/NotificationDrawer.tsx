@@ -22,6 +22,7 @@ import {
 import { api } from "@/services/api";
 import { NotificationItem, NotificationChannel, NotificationSeverity } from "@/types";
 import { Badge } from "@/components/ui/Badge";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { Portal } from "@/components/ui/Portal";
 
 interface NotificationDrawerProps {
@@ -321,12 +322,7 @@ export function NotificationDrawer({
             {/* Notification Items List */}
             <div className="flex-1 overflow-y-auto divide-y divide-stone-100 p-4 space-y-3">
               {loading ? (
-                <div className="py-16 text-center">
-                  <RefreshCw className="w-6 h-6 animate-spin text-emerald-800 mx-auto mb-2" />
-                  <p className="text-xs text-stone-500 font-medium">
-                    Loading live alerts...
-                  </p>
-                </div>
+                <TableSkeleton rows={5} columns={2} />
               ) : filteredNotifications.length === 0 ? (
                 <div className="py-16 text-center">
                   <div className="w-12 h-12 rounded-2xl bg-stone-100 text-stone-400 mx-auto flex items-center justify-center mb-3">

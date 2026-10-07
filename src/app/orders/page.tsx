@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState, Suspense } from "react";
+import React, { useCallback, useEffect, useRef, useState, Suspense } from "react";
+import io, { Socket } from "socket.io-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ShoppingBag,
@@ -29,7 +30,7 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
 import { OrderDetailModal } from "@/components/orders/OrderDetailModal";
@@ -59,6 +60,8 @@ function OrdersContent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   // Filters & Pagination synced with URL query parameters
   const [selectedPlatform, setSelectedPlatform] = useState<string>(() => {
@@ -153,6 +156,25 @@ function OrdersContent() {
 
   useEffect(() => {
     loadOrders();
+  }, [loadOrders]);
+
+  // Socket.IO real-time updates — auto-refresh when new orders arrive or statuses change
+  useEffect(() => {
+    const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace(
+      /\/api\/v1\/?$/,
+      ""
+    );
+    const socket = io(base, { transports: ["websocket", "polling"] });
+    socketRef.current = socket;
+
+    socket.on("connect", () => setSocketConnected(true));
+    socket.on("disconnect", () => setSocketConnected(false));
+    socket.on("new_order", () => loadOrders());
+    socket.on("order_status_changed", () => loadOrders());
+
+    return () => {
+      socket.disconnect();
+    };
   }, [loadOrders]);
 
   const handleRefresh = () => {
@@ -294,9 +316,6 @@ function OrdersContent() {
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-serif">
                 Order Management
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D4AF37]/15 text-[#8C701E] border border-[#D4AF37]/30">
-                Phase 4
-              </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               Unified operational pipeline across Panna Website, Zomato, and Swiggy
@@ -439,9 +458,13 @@ function OrdersContent() {
             </div>
 
             <div className="flex items-center gap-2 text-xs text-stone-500">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/60">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Kitchen Sync
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold border ${
+                socketConnected
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200/60"
+                  : "bg-rose-50 text-rose-700 border-rose-200/60"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${socketConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                {socketConnected ? "Live Sync ON" : "Offline"}
               </span>
             </div>
           </div>
@@ -527,7 +550,7 @@ function OrdersContent() {
         <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
           {loading ? (
             <div className="p-12">
-              <LoadingState message="Fetching live kitchen orders..." />
+              <TableSkeleton rows={6} columns={6} />
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-600 space-y-2">
@@ -774,7 +797,7 @@ export default function OrdersPage() {
       fallback={
         <DashboardLayout>
           <div className="p-12">
-            <LoadingState message="Loading orders pipeline..." />
+            <TableSkeleton rows={6} columns={6} />
           </div>
         </DashboardLayout>
       }
