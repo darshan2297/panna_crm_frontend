@@ -7,6 +7,7 @@ import { api } from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useBackendStatus } from "@/components/common/BackendStatusProvider";
 
 export default function LoginPage() {
   const router = useRouter();

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { BackendStatusProvider } from "@/components/common/BackendStatusProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="antialiased font-sans bg-[#FAF8F5] text-slate-800">
-        {children}
+        <BackendStatusProvider>{children}</BackendStatusProvider>
       </body>
     </html>
   );
