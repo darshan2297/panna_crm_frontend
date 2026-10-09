@@ -20,11 +20,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ViewModeToggle } from "@/components/common/ViewModeToggle";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MenuItemModal } from "@/components/menu/MenuItemModal";
 import { CategoryModal } from "@/components/menu/CategoryModal";
@@ -43,6 +43,9 @@ function MenuManagementContent() {
   const [summary, setSummary] = useState<MenuSummary | null>(null);
 
   const [loading, setLoading] = useState(true);
+  // Category/search changes re-fetch; keep the current grid visible unless the
+  // request is slow enough to warrant a skeleton.
+  const showLoadingSkeleton = useDelayedLoading(loading);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -440,7 +443,7 @@ function MenuManagementContent() {
       </div>
 
       {/* Main Dishes Content Area */}
-      {loading ? (
+      {showLoadingSkeleton ? (
         <TableSkeleton rows={6} columns={5} />
       ) : filteredItems.length === 0 ? (
         <EmptyState
@@ -836,10 +839,8 @@ function MenuManagementContent() {
 
 export default function MenuPage() {
   return (
-    <DashboardLayout>
-      <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={5} /></div>}>
-        <MenuManagementContent />
-      </Suspense>
-    </DashboardLayout>
+    <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={5} /></div>}>
+      <MenuManagementContent />
+    </Suspense>
   );
 }

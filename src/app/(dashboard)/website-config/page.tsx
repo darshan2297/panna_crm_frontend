@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import {
   Image as ImageIcon, Save, Plus, Trash2, Upload, Truck, Store, Gift, Globe2, CreditCard,
 } from "lucide-react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -125,12 +124,11 @@ export default function WebsiteConfigPage() {
     save(next);
   };
 
-  if (loading) return <DashboardLayout><LoadingState /></DashboardLayout>;
-  if (!config) return <DashboardLayout><div className="p-6 text-red-600">{error || "Failed to load"}</div></DashboardLayout>;
+  if (loading) return <LoadingState />;
+  if (!config) return <div className="p-6 text-red-600">{error || "Failed to load"}</div>;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 p-2">
+    <div className="space-y-6 p-2">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Globe2 className="h-6 w-6" /> Website Configuration</h1>
@@ -254,7 +252,6 @@ export default function WebsiteConfigPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

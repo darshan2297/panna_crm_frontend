@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KPICards } from "@/components/dashboard/KPICards";
 import { SalesTrendChart } from "@/components/dashboard/SalesTrendChart";
 import { PlatformDistributionCard } from "@/components/dashboard/PlatformDistributionCard";
@@ -64,31 +63,27 @@ export default function DashboardPage() {
 
   if (loading && !data) {
     return (
-      <DashboardLayout>
-        <div className="min-h-[70vh] flex items-center justify-center">
-          <LoadingState message="Loading live operational metrics & sales trends..." />
-        </div>
-      </DashboardLayout>
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <LoadingState message="Loading live operational metrics & sales trends..." />
+      </div>
     );
   }
 
   if (error && !data) {
     return (
-      <DashboardLayout>
-        <div className="p-8 rounded-xl bg-rose-50 border border-rose-200 text-center space-y-3 my-8">
-          <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
-          <h3 className="text-sm font-bold text-rose-900">Failed to Connect to Kitchen Operations API</h3>
-          <p className="text-xs text-rose-700 max-w-md mx-auto">{error}</p>
-          <Button variant="primary" size="sm" onClick={() => fetchDashboard(false)}>
-            Retry Connection
-          </Button>
-        </div>
-      </DashboardLayout>
+      <div className="p-8 rounded-xl bg-rose-50 border border-rose-200 text-center space-y-3 my-8">
+        <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
+        <h3 className="text-sm font-bold text-rose-900">Failed to Connect to Kitchen Operations API</h3>
+        <p className="text-xs text-rose-700 max-w-md mx-auto">{error}</p>
+        <Button variant="primary" size="sm" onClick={() => fetchDashboard(false)}>
+          Retry Connection
+        </Button>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       {/* Top Header & Range Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -183,6 +178,6 @@ export default function DashboardPage() {
           />
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

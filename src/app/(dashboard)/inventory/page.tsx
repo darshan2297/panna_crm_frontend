@@ -29,11 +29,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ViewModeToggle } from "@/components/common/ViewModeToggle";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InventoryItemModal } from "@/components/inventory/InventoryItemModal";
 import { StockAdjustmentModal } from "@/components/inventory/StockAdjustmentModal";
@@ -78,6 +78,9 @@ function InventoryManagementContent() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  // Filter changes re-fetch through loadData; only show the skeleton if that
+  // fetch is genuinely slow, otherwise a warm response flashes for two frames.
+  const showLoadingSkeleton = useDelayedLoading(loading);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
@@ -483,7 +486,7 @@ function InventoryManagementContent() {
       </div>
 
       {/* Main Content Area */}
-      {loading ? (
+      {showLoadingSkeleton ? (
         <TableSkeleton rows={6} columns={8} />
       ) : activeTab === "all" ? (
         items.length === 0 ? (
@@ -1157,10 +1160,8 @@ function InventoryManagementContent() {
 
 export default function InventoryPage() {
   return (
-    <DashboardLayout>
-      <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={8} /></div>}>
-        <InventoryManagementContent />
-      </Suspense>
-    </DashboardLayout>
+    <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={8} /></div>}>
+      <InventoryManagementContent />
+    </Suspense>
   );
 }

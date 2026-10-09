@@ -26,14 +26,17 @@ import {
   HelpCircle,
   Inbox,
   MapPin,
+  Loader2,
 } from "lucide-react";
 import { useUiStore } from "@/store/uiStore";
+import { useNavigationStore } from "@/store/navigationStore";
 import { cn } from "@/lib/utils";
 
 interface NavItemConfig {
+  type?: "header";
   title: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  href?: string;
+  icon?: React.ComponentType<{ className?: string }>;
   badge?: string | number;
   badgeVariant?: "brand" | "warning" | "danger";
   children?: { title: string; href: string }[];
@@ -175,12 +178,16 @@ function SidebarInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
+  const pendingHref = useNavigationStore((s) => s.pendingHref);
+  const beginNavigation = useNavigationStore((s) => s.beginNavigation);
+  const settleNavigation = useNavigationStore((s) => s.settleNavigation);
 
   // Helper to determine which menu matches the current path
   const getMenuForPath = (path: string): string | null => {
     for (const item of navItems) {
       if (item.children && item.children.length > 0) {
-        if (path === item.href || (item.href !== "/" && path.startsWith(item.href))) {
+        const href = item.href ?? "";
+        if (path === href || (href !== "/" && href !== "" && path.startsWith(href))) {
           return item.title;
         }
       }
@@ -196,6 +203,13 @@ function SidebarInner() {
     setOpenSubMenu(currentMenu);
   }, [pathname]);
 
+  // Retire the pending flag once the browser reaches the requested URL. The
+  // Sidebar already re-renders on both pathname and query changes, so it is the
+  // cheapest place to observe same-path navigations like /inventory?tab=low_stock.
+  useEffect(() => {
+    settleNavigation(pathname, searchParams);
+  }, [pathname, searchParams, settleNavigation]);
+
   const handleParentMenuClick = (item: NavItemConfig, e: React.MouseEvent) => {
     e.preventDefault();
     if (!item.children || item.children.length === 0) return;
@@ -205,6 +219,7 @@ function SidebarInner() {
 
     // Automatically navigate to the first sub-item as default selection
     const defaultHref = item.children[0].href;
+    beginNavigation(defaultHref);
     router.push(defaultHref);
   };
 
@@ -269,12 +284,16 @@ function SidebarInner() {
               </div>
             );
           }
-          const Icon = item.icon;
+          const Icon = item.icon!;
+          const href = item.href ?? "";
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+            pathname === href ||
+            (href !== "/" && href !== "" && pathname.startsWith(href));
           const hasChildren = item.children && item.children.length > 0;
           const isSubMenuOpen = openSubMenu === item.title;
+          // Optimistic highlight: the route has not committed yet, so `isActive`
+          // is still false and the click would otherwise look ignored.
+          const isPending = hasChildren && pendingHref === (item.children?.[0]?.href ?? "");
 
           return (
             <div key={item.title} className="space-y-1">
@@ -282,23 +301,28 @@ function SidebarInner() {
                 <button
                   type="button"
                   onClick={(e) => handleParentMenuClick(item, e)}
+                  aria-busy={isPending || undefined}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
-                    isActive
+                    isActive || isPending
                       ? "bg-panna-green-800/80 text-white font-semibold"
                       : "text-panna-green-200 hover:bg-panna-green-900/50 hover:text-white"
                   )}
                   title={sidebarCollapsed ? item.title : undefined}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon
-                      className={cn(
-                        "w-5 h-5 flex-shrink-0 transition-colors",
-                        isActive
-                          ? "text-panna-gold-400"
-                          : "text-panna-green-300 group-hover:text-panna-gold-400"
-                      )}
-                    />
+                    {isPending ? (
+                      <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin text-panna-gold-400" />
+                    ) : (
+                      <Icon
+                        className={cn(
+                          "w-5 h-5 flex-shrink-0 transition-colors",
+                          isActive || isPending
+                            ? "text-panna-gold-400"
+                            : "text-panna-green-300 group-hover:text-panna-gold-400"
+                        )}
+                      />
+                    )}
                     {!sidebarCollapsed && <span>{item.title}</span>}
                   </div>
 
@@ -332,25 +356,33 @@ function SidebarInner() {
                 </button>
               ) : (
                 <Link
-                  href={item.href}
-                  onClick={() => setOpenSubMenu(null)}
+                  href={href}
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    beginNavigation(href);
+                  }}
+                  aria-busy={pendingHref === href || undefined}
                   className={cn(
                     "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
-                    isActive
+                    isActive || pendingHref === href
                       ? "bg-panna-green-800 text-white font-semibold shadow-inner"
                       : "text-panna-green-200 hover:bg-panna-green-900/50 hover:text-white"
                   )}
                   title={sidebarCollapsed ? item.title : undefined}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon
-                      className={cn(
-                        "w-5 h-5 flex-shrink-0 transition-colors",
-                        isActive
-                          ? "text-panna-gold-400"
-                          : "text-panna-green-300 group-hover:text-panna-gold-400"
-                      )}
-                    />
+                    {pendingHref === href ? (
+                      <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin text-panna-gold-400" />
+                    ) : (
+                      <Icon
+                        className={cn(
+                          "w-5 h-5 flex-shrink-0 transition-colors",
+                          isActive || pendingHref === href
+                            ? "text-panna-gold-400"
+                            : "text-panna-green-300 group-hover:text-panna-gold-400"
+                        )}
+                      />
+                    )}
                     {!sidebarCollapsed && <span>{item.title}</span>}
                   </div>
                   {!sidebarCollapsed && item.badge && (
@@ -411,13 +443,18 @@ function SidebarInner() {
 
                         <Link
                           href={sub.href}
+                          onClick={() => beginNavigation(sub.href)}
+                          aria-busy={pendingHref === sub.href || undefined}
                           className={cn(
-                            "w-full block px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                            isSubActive
+                            "w-full block px-2.5 py-1.5 rounded-md text-xs font-medium transition-all inline-flex items-center gap-1.5",
+                            isSubActive || pendingHref === sub.href
                               ? "text-panna-gold-400 bg-panna-green-900/60 font-semibold shadow-xs"
                               : "text-panna-green-300 hover:text-white hover:bg-panna-green-900/30"
                           )}
                         >
+                          {pendingHref === sub.href && (
+                            <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                          )}
                           {sub.title}
                         </Link>
                       </div>

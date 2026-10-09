@@ -26,7 +26,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -472,328 +471,328 @@ function CustomersPageContent() {
   const topSpenders = [...customers].sort((a, b) => b.total_spent - a.total_spent).slice(0, 20);
 
   return (
-    <DashboardLayout>
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
-              Customer CRM
-            </h1>
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-900 text-white">
-              {total} Total
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            360° customer profiles — lifetime value, order history, segments, and internal notes.
-          </p>
+  <>
+    {/* Page Header */}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
+            Customer CRM
+          </h1>
+          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-900 text-white">
+            {total} Total
+          </span>
         </div>
-
-        <button
-          onClick={() => loadData(true)}
-          title="Refresh"
-          className="flex items-center justify-center w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:text-emerald-800 hover:border-emerald-300 transition-colors shadow-sm"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-        </button>
+        <p className="text-xs text-slate-500 mt-1">
+          360° customer profiles — lifetime value, order history, segments, and internal notes.
+        </p>
       </div>
 
-      {/* KPI Summary Strip */}
-      {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {[
-            { label: "Total Customers", value: summary.total_customers, icon: <Users className="w-4 h-4" />, color: "text-slate-700", bg: "bg-slate-50", border: "border-slate-200" },
-            { label: "New This Month", value: summary.new_customers, icon: <CheckCircle2 className="w-4 h-4" />, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
-            { label: "VIP Customers", value: summary.vip_customers, icon: <Crown className="w-4 h-4" />, color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" },
-            { label: "Regular", value: summary.regular_customers, icon: <Star className="w-4 h-4" />, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
-            { label: "Lapsed (>30d)", value: summary.lapsed_customers, icon: <AlertTriangle className="w-4 h-4" />, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200" },
-            { label: "Total Revenue", value: formatCurrency(summary.total_revenue), icon: <IndianRupee className="w-4 h-4" />, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", isText: true },
-            { label: "Avg. Order Value", value: formatCurrency(summary.average_order_value), icon: <TrendingUp className="w-4 h-4" />, color: "text-violet-700", bg: "bg-violet-50", border: "border-violet-200", isText: true },
-          ].map((kpi) => (
-            <div key={kpi.label} className={`${kpi.bg} ${kpi.border} border rounded-2xl p-3.5 shadow-sm`}>
-              <div className={`${kpi.color} mb-1`}>{kpi.icon}</div>
-              <p className={`text-lg font-black ${kpi.color}`}>
-                {(kpi as any).isText ? kpi.value : kpi.value.toLocaleString("en-IN")}
-              </p>
-              <p className="text-[10px] text-stone-500 font-medium mt-0.5">{kpi.label}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <button
+        onClick={() => loadData(true)}
+        title="Refresh"
+        className="flex items-center justify-center w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:text-emerald-800 hover:border-emerald-300 transition-colors shadow-sm"
+      >
+        <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+      </button>
+    </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="flex border-b border-stone-200">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 ${
-                activeTab === tab.id
-                  ? "border-emerald-800 text-emerald-900 bg-emerald-50/50"
-                  : "border-transparent text-stone-500 hover:text-stone-800 hover:bg-stone-50"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    {/* KPI Summary Strip */}
+    {summary && (
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        {[
+          { label: "Total Customers", value: summary.total_customers, icon: <Users className="w-4 h-4" />, color: "text-slate-700", bg: "bg-slate-50", border: "border-slate-200" },
+          { label: "New This Month", value: summary.new_customers, icon: <CheckCircle2 className="w-4 h-4" />, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
+          { label: "VIP Customers", value: summary.vip_customers, icon: <Crown className="w-4 h-4" />, color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" },
+          { label: "Regular", value: summary.regular_customers, icon: <Star className="w-4 h-4" />, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
+          { label: "Lapsed (>30d)", value: summary.lapsed_customers, icon: <AlertTriangle className="w-4 h-4" />, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200" },
+          { label: "Total Revenue", value: formatCurrency(summary.total_revenue), icon: <IndianRupee className="w-4 h-4" />, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", isText: true },
+          { label: "Avg. Order Value", value: formatCurrency(summary.average_order_value), icon: <TrendingUp className="w-4 h-4" />, color: "text-violet-700", bg: "bg-violet-50", border: "border-violet-200", isText: true },
+        ].map((kpi) => (
+          <div key={kpi.label} className={`${kpi.bg} ${kpi.border} border rounded-2xl p-3.5 shadow-sm`}>
+            <div className={`${kpi.color} mb-1`}>{kpi.icon}</div>
+            <p className={`text-lg font-black ${kpi.color}`}>
+              {(kpi as any).isText ? kpi.value : kpi.value.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[10px] text-stone-500 font-medium mt-0.5">{kpi.label}</p>
+          </div>
+        ))}
+      </div>
+    )}
 
-        {/* Tab: All Customers */}
-        {activeTab === "all" && (
-          <div>
-            {/* Toolbar */}
-            <div className="p-4 border-b border-stone-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              {/* Segment Filter */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {SEGMENT_FILTERS.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => { setSegment(f.id); setPage(1); }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      segment === f.id
-                        ? "bg-emerald-950 text-white shadow-sm"
-                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+    {/* Tab Navigation */}
+    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+      <div className="flex border-b border-stone-200">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 ${
+              activeTab === tab.id
+                ? "border-emerald-800 text-emerald-900 bg-emerald-50/50"
+                : "border-transparent text-stone-500 hover:text-stone-800 hover:bg-stone-50"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-              <div className="flex items-center gap-2 sm:ml-auto">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Name, phone, email..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && loadData()}
-                    className="bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-900 w-52"
-                  />
-                </div>
-
-                {/* Sort */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                  className="border border-stone-200 rounded-xl px-3 py-2 text-xs bg-stone-50 focus:outline-none focus:ring-2 focus:ring-emerald-900"
+      {/* Tab: All Customers */}
+      {activeTab === "all" && (
+        <div>
+          {/* Toolbar */}
+          <div className="p-4 border-b border-stone-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            {/* Segment Filter */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {SEGMENT_FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => { setSegment(f.id); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    segment === f.id
+                      ? "bg-emerald-950 text-white shadow-sm"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  }`}
                 >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
+                  {f.label}
+                </button>
+              ))}
             </div>
 
-            {/* Table */}
-            {loading ? (
-              <TableSkeleton rows={6} columns={6} />
-            ) : customers.length === 0 ? (
-              <EmptyState
-                title="No Customers Found"
-                description="No customer records match your current filters."
-                actionText="Clear Filters"
-                onAction={() => { setSearch(""); setSegment("ALL"); }}
-              />
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-[10px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
-                        <th className="px-4 py-3 text-left">Customer</th>
-                        <th className="px-4 py-3 text-left">Segment</th>
-                        <th className="px-4 py-3 text-right">Orders</th>
-                        <th className="px-4 py-3 text-right">Lifetime Value</th>
-                        <th className="px-4 py-3 text-right">Avg. Order</th>
-                        <th className="px-4 py-3 text-left">Last Order</th>
-                        <th className="px-4 py-3 text-left"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-50">
-                      {customers.map((c) => (
-                        <tr key={c.id} className="hover:bg-stone-50/80 transition-colors group">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-800 to-emerald-950 flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
-                                {c.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <p className="font-semibold text-slate-800 text-sm">{c.name}</p>
-                                <p className="text-xs text-stone-500">{c.phone}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <SegmentBadge segment={c.segment as CustomerSegment} />
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-slate-700">{c.total_orders}</td>
-                          <td className="px-4 py-3 text-right font-black text-emerald-700">{formatCurrency(c.total_spent)}</td>
-                          <td className="px-4 py-3 text-right text-stone-600">{formatCurrency(c.average_order_value)}</td>
-                          <td className="px-4 py-3 text-stone-500 text-xs">
-                            {c.last_order_date ? timeAgo(c.last_order_date) : "—"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => setSelectedCustomerId(c.id)}
-                              className="px-3 py-1.5 bg-emerald-900 text-white rounded-lg text-xs font-semibold hover:bg-emerald-800 transition-colors"
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/50">
-                    <p className="text-xs text-stone-500">
-                      Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page <= 1}
-                        className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200 disabled:opacity-30 transition-colors"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <span className="text-xs text-stone-600 font-medium px-2">
-                        {page} / {totalPages}
-                      </span>
-                      <button
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={page >= totalPages}
-                        className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200 disabled:opacity-30 transition-colors"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Tab: Top Spenders */}
-        {activeTab === "top" && (
-          <div className="p-4">
-            {loading ? (
-              <TableSkeleton rows={6} columns={5} />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {topSpenders.map((c, idx) => (
-                  <div
-                    key={c.id}
-                    onClick={() => setSelectedCustomerId(c.id)}
-                    className="flex items-center gap-3 p-3.5 rounded-2xl border border-stone-200 bg-white hover:border-emerald-300 hover:shadow-md cursor-pointer transition-all group"
-                  >
-                    <div className="relative flex-shrink-0">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shadow-sm ${
-                        idx === 0 ? "bg-gradient-to-br from-amber-400 to-amber-600" :
-                        idx === 1 ? "bg-gradient-to-br from-slate-400 to-slate-600" :
-                        idx === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600" :
-                        "bg-gradient-to-br from-emerald-700 to-emerald-950"
-                      }`}>
-                        {c.name.charAt(0).toUpperCase()}
-                      </div>
-                      {idx < 3 && (
-                        <span className="absolute -top-1 -right-1 text-[10px] font-black">
-                          {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <p className="font-bold text-slate-800 text-sm truncate">{c.name}</p>
-                        <SegmentBadge segment={c.segment as CustomerSegment} />
-                      </div>
-                      <p className="text-xs text-stone-500">{c.phone} • {c.total_orders} orders</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="font-black text-emerald-700 text-base">{formatCurrency(c.total_spent)}</p>
-                      <p className="text-[10px] text-stone-400">LTV</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab: Order History */}
-        {activeTab === "history" && (
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center gap-2 sm:ml-auto">
+              {/* Search */}
+              <div className="relative">
                 <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search customer by phone or name..."
+                  placeholder="Name, phone, email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && loadData()}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-900"
+                  className="bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-900 w-52"
                 />
               </div>
+
+              {/* Sort */}
+              <select
+                value={sortBy}
+                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                className="border border-stone-200 rounded-xl px-3 py-2 text-xs bg-stone-50 focus:outline-none focus:ring-2 focus:ring-emerald-900"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
             </div>
-            {loading ? (
-              <TableSkeleton rows={6} columns={5} />
-            ) : customers.length === 0 ? (
-              <EmptyState title="No Results" description="Search for a customer to see their order history." />
-            ) : (
-              <div className="space-y-2">
-                {customers.map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => setSelectedCustomerId(c.id)}
-                    className="flex items-center gap-3 p-3.5 rounded-xl border border-stone-200 bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-800 to-emerald-950 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <TableSkeleton rows={6} columns={6} />
+          ) : customers.length === 0 ? (
+            <EmptyState
+              title="No Customers Found"
+              description="No customer records match your current filters."
+              actionText="Clear Filters"
+              onAction={() => { setSearch(""); setSegment("ALL"); }}
+            />
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[10px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
+                      <th className="px-4 py-3 text-left">Customer</th>
+                      <th className="px-4 py-3 text-left">Segment</th>
+                      <th className="px-4 py-3 text-right">Orders</th>
+                      <th className="px-4 py-3 text-right">Lifetime Value</th>
+                      <th className="px-4 py-3 text-right">Avg. Order</th>
+                      <th className="px-4 py-3 text-left">Last Order</th>
+                      <th className="px-4 py-3 text-left"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-50">
+                    {customers.map((c) => (
+                      <tr key={c.id} className="hover:bg-stone-50/80 transition-colors group">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-800 to-emerald-950 flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
+                              {c.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-800 text-sm">{c.name}</p>
+                              <p className="text-xs text-stone-500">{c.phone}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <SegmentBadge segment={c.segment as CustomerSegment} />
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-slate-700">{c.total_orders}</td>
+                        <td className="px-4 py-3 text-right font-black text-emerald-700">{formatCurrency(c.total_spent)}</td>
+                        <td className="px-4 py-3 text-right text-stone-600">{formatCurrency(c.average_order_value)}</td>
+                        <td className="px-4 py-3 text-stone-500 text-xs">
+                          {c.last_order_date ? timeAgo(c.last_order_date) : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => setSelectedCustomerId(c.id)}
+                            className="px-3 py-1.5 bg-emerald-900 text-white rounded-lg text-xs font-semibold hover:bg-emerald-800 transition-colors"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/50">
+                  <p className="text-xs text-stone-500">
+                    Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1}
+                      className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200 disabled:opacity-30 transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs text-stone-600 font-medium px-2">
+                      {page} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page >= totalPages}
+                      className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200 disabled:opacity-30 transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Top Spenders */}
+      {activeTab === "top" && (
+        <div className="p-4">
+          {loading ? (
+            <TableSkeleton rows={6} columns={5} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {topSpenders.map((c, idx) => (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCustomerId(c.id)}
+                  className="flex items-center gap-3 p-3.5 rounded-2xl border border-stone-200 bg-white hover:border-emerald-300 hover:shadow-md cursor-pointer transition-all group"
+                >
+                  <div className="relative flex-shrink-0">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shadow-sm ${
+                      idx === 0 ? "bg-gradient-to-br from-amber-400 to-amber-600" :
+                      idx === 1 ? "bg-gradient-to-br from-slate-400 to-slate-600" :
+                      idx === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600" :
+                      "bg-gradient-to-br from-emerald-700 to-emerald-950"
+                    }`}>
                       {c.name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-800 text-sm">{c.name}</p>
-                        <SegmentBadge segment={c.segment as CustomerSegment} />
-                      </div>
-                      <p className="text-xs text-stone-500">{c.phone}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-slate-700">{c.total_orders} orders</p>
-                      <p className="text-xs text-stone-400">{c.last_order_date ? timeAgo(c.last_order_date) : "—"}</p>
-                    </div>
+                    {idx < 3 && (
+                      <span className="absolute -top-1 -right-1 text-[10px] font-black">
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Customer Detail Drawer */}
-      {selectedCustomerId !== null && (
-        <CustomerDrawer
-          customerId={selectedCustomerId}
-          onClose={() => setSelectedCustomerId(null)}
-          onUpdated={() => loadData(true)}
-        />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <p className="font-bold text-slate-800 text-sm truncate">{c.name}</p>
+                      <SegmentBadge segment={c.segment as CustomerSegment} />
+                    </div>
+                    <p className="text-xs text-stone-500">{c.phone} • {c.total_orders} orders</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-black text-emerald-700 text-base">{formatCurrency(c.total_spent)}</p>
+                    <p className="text-[10px] text-stone-400">LTV</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
-    </DashboardLayout>
+
+      {/* Tab: Order History */}
+      {activeTab === "history" && (
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search customer by phone or name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && loadData()}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-900"
+              />
+            </div>
+          </div>
+          {loading ? (
+            <TableSkeleton rows={6} columns={5} />
+          ) : customers.length === 0 ? (
+            <EmptyState title="No Results" description="Search for a customer to see their order history." />
+          ) : (
+            <div className="space-y-2">
+              {customers.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCustomerId(c.id)}
+                  className="flex items-center gap-3 p-3.5 rounded-xl border border-stone-200 bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-800 to-emerald-950 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                    {c.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-800 text-sm">{c.name}</p>
+                      <SegmentBadge segment={c.segment as CustomerSegment} />
+                    </div>
+                    <p className="text-xs text-stone-500">{c.phone}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-slate-700">{c.total_orders} orders</p>
+                    <p className="text-xs text-stone-400">{c.last_order_date ? timeAgo(c.last_order_date) : "—"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+
+    {/* Customer Detail Drawer */}
+    {selectedCustomerId !== null && (
+      <CustomerDrawer
+        customerId={selectedCustomerId}
+        onClose={() => setSelectedCustomerId(null)}
+        onUpdated={() => loadData(true)}
+      />
+    )}
+  </>
   );
 }
 
 export default function CustomersPage() {
   return (
-    <Suspense fallback={<DashboardLayout><div className="p-8"><TableSkeleton rows={6} columns={6} /></div></DashboardLayout>}>
+    <Suspense fallback={<div className="p-8"><TableSkeleton rows={6} columns={6} /></div>}>
       <CustomersPageContent />
     </Suspense>
   );
