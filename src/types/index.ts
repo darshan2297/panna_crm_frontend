@@ -141,6 +141,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  is_free?: boolean;
   created_at?: string;
 }
 
@@ -1131,6 +1132,49 @@ export interface PaymentMethodConfig {
   updated_at: string;
 }
 
+export interface PromoEvent {
+  id: number;
+  event_title: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface PromoEventInput {
+  id?: number;
+  event_title: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface PromoCodeInput {
+  code?: string;
+  title?: string;
+  subtitle?: string | null;
+  description?: string | null;
+  terms_conditions?: string | null;
+  discount_type?: string;
+  discount_value?: number;
+  free_item_name?: string | null;
+  min_order_value?: number;
+  badge?: string | null;
+  active?: boolean;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  max_uses?: number | null;
+  per_user_limit?: number;
+  applicable_items?: string[] | null;
+  minimum_order_items?: number | null;
+  category?: string;
+  is_private?: boolean;
+  discount_on?: string;
+  min_quantity?: number | null;
+  max_quantity?: number | null;
+  max_order_value?: number | null;
+  customer_type?: string;
+  max_discount_amount?: number | null;
+  events?: PromoEventInput[];
+}
+
 export interface PromoCode {
   id: number;
   code: string;
@@ -1150,6 +1194,17 @@ export interface PromoCode {
   per_user_limit: number;
   applicable_items: string[] | null;
   minimum_order_items: number | null;
+  first_order_only: boolean;
+  category: "general" | "single_event" | "multiple_event";
+  is_private: boolean;
+  terms_conditions: string | null;
+  discount_on: "amount" | "quantity";
+  min_quantity: number | null;
+  max_quantity: number | null;
+  max_order_value: number | null;
+  customer_type: "all" | "new" | "returning";
+  max_discount_amount: number | null;
+  events: PromoEvent[];
   created_at: string;
   updated_at: string;
 }

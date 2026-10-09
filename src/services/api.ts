@@ -72,6 +72,7 @@ import {
   StorefrontConfig,
   PaymentMethodConfig,
   PromoCode,
+  PromoCodeInput,
   Review,
   FAQ,
   DeliveryArea,
@@ -1048,11 +1049,15 @@ class ApiClient {
     return this.request<APIResponse<PromoCode[]>>("/website/promocodes");
   }
 
-  async createPromoCode(payload: Partial<PromoCode>): Promise<APIResponse<PromoCode>> {
+  async getPromoCode(id: number): Promise<APIResponse<PromoCode>> {
+    return this.request<APIResponse<PromoCode>>(`/website/promocodes/${id}`);
+  }
+
+  async createPromoCode(payload: PromoCodeInput): Promise<APIResponse<PromoCode>> {
     return this.request<APIResponse<PromoCode>>("/website/promocodes", { method: "POST", body: JSON.stringify(payload) });
   }
 
-  async updatePromoCode(id: number, payload: Partial<PromoCode>): Promise<APIResponse<PromoCode>> {
+  async updatePromoCode(id: number, payload: PromoCodeInput): Promise<APIResponse<PromoCode>> {
     return this.request<APIResponse<PromoCode>>(`/website/promocodes/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
   }
 

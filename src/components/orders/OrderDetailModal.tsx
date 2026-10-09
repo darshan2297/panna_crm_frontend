@@ -199,6 +199,11 @@ export function OrderDetailModal({
                     <div>
                       <span className="font-bold text-base mr-2">{item.quantity}x</span>
                       <span className="font-semibold text-gray-800">{item.item_name}</span>
+                      {item.is_free && (
+                        <span className="ml-2 text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded uppercase font-sans">
+                          Free
+                        </span>
+                      )}
                       <span className="block text-xs text-gray-500 font-sans font-medium">Portion: {item.portion_size}</span>
                     </div>
                   </div>
@@ -282,8 +287,13 @@ export function OrderDetailModal({
                     <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="w-2 h-2 rounded-full bg-[#0C3823]" />
+                          <span className={`w-2 h-2 rounded-full ${item.is_free ? 'bg-amber-500' : 'bg-[#0C3823]'}`} />
                           <h4 className="font-bold text-gray-900 text-sm">{item.item_name}</h4>
+                          {item.is_free && (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded uppercase">
+                              Free
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2 text-xs text-gray-500 pl-4">
                           <span className="px-1.5 py-0.5 rounded bg-gray-100 font-medium text-gray-700">
@@ -295,8 +305,12 @@ export function OrderDetailModal({
                           <span>₹{item.unit_price} each</span>
                         </div>
                       </div>
-                      <div className="text-right font-bold text-sm text-gray-900 font-mono">
-                        ₹{item.total_price.toFixed(2)}
+                      <div className="text-right font-bold text-sm font-mono">
+                        {item.is_free ? (
+                          <span className="text-amber-600">FREE</span>
+                        ) : (
+                          <span className="text-gray-900">₹{item.total_price.toFixed(2)}</span>
+                        )}
                       </div>
                     </div>
                   ))}

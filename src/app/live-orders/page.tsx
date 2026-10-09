@@ -52,18 +52,38 @@ function LiveOrdersInner() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [shopFlags, setShopFlags] = useState<Record<string, boolean>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const socketRef = useRef<Socket | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playOrderSound = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio("/sounds/order-notification.mp3");
+      audioRef.current.volume = 0.7;
+    }
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(() => {
+      // Autoplay may be blocked until user interacts with the page
+    });
+  }, []);
 
   const loadOrders = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
       const res = await api.getOrders({ page: 1, page_size: 50 });
       const items = (res.items || []).filter((o) =>
         ACTIVE_STATUSES.includes(o.order_status as OrderStatus)
       );
       setOrders(items);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load live orders:", err);
+      setLoadError(err?.message || "Failed to load orders. Please retry.");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -86,12 +106,29 @@ function LiveOrdersInner() {
       /\/api\/v1\/?$/,
       ""
     );
-    const socket = io(base, { transports: ["websocket", "polling"] });
+    const socket = io(base, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 10000,
+    });
     socketRef.current = socket;
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
-    socket.on("new_order", () => loadOrders());
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err.message);
+      setConnected(false);
+    });
+    socket.on("error", (err) => {
+      console.error("Socket error:", err);
+    });
+    socket.on("new_order", () => {
+      loadOrders();
+      playOrderSound();
+    });
     socket.on("order_status_changed", () => loadOrders());
     socket.on("shop_status_changed", (p: { platform: string; shop_open: boolean }) => {
       setShopFlags((prev) => ({ ...prev, [p.platform]: p.shop_open }));
@@ -183,6 +220,18 @@ function LiveOrdersInner() {
       {errorMsg && (
         <div className="mx-4 mt-3 px-4 py-2 rounded-lg bg-rose-950 border border-rose-800 text-rose-300 text-sm">
           {errorMsg}
+        </div>
+      )}
+
+      {loadError && (
+        <div className="mx-4 mt-3 px-4 py-3 rounded-lg bg-amber-950 border border-amber-800 text-amber-200 text-sm flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button
+            onClick={loadOrders}
+            className="px-3 py-1.5 rounded-lg bg-amber-800 hover:bg-amber-700 text-white text-xs font-bold transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
