@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { api } from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
+import { Role } from "@/types";
 import {
   User as UserIcon,
   Lock,
@@ -39,7 +40,7 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Tax settings state
+  // Tax settings state — loaded from the storefront config API
   const [gstRate, setGstRate] = useState("5");
   const [gstNumber, setGstNumber] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -47,6 +48,8 @@ export default function SettingsPage() {
   const [taxSaving, setTaxSaving] = useState(false);
   const [taxSuccess, setTaxSuccess] = useState<string | null>(null);
   const [taxError, setTaxError] = useState<string | null>(null);
+  const [roleMatrix, setRoleMatrix] = useState<Role[]>([]);
+  const [roleMatrixLoading, setRoleMatrixLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -55,6 +58,31 @@ export default function SettingsPage() {
       setEmail(user.email || "");
     }
   }, [user]);
+
+  // Load tax settings from the storefront config API
+  useEffect(() => {
+    api.getStorefrontConfig()
+      .then((res) => {
+        if (res.data) {
+          const meta = (res.data as any) || {};
+          setGstRate(String(meta.gst_rate ?? "5"));
+          setGstNumber(meta.gst_number ?? "");
+          setBusinessName(res.data.brand_name || "");
+          setBusinessAddress(res.data.address_line || "");
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Load role matrix from the roles API
+  useEffect(() => {
+    api.getRoles()
+      .then((res) => {
+        if (res.data) setRoleMatrix(res.data);
+      })
+      .catch(() => {})
+      .finally(() => setRoleMatrixLoading(false));
+  }, []);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -343,53 +371,37 @@ export default function SettingsPage() {
             <div>
               <CardTitle>Role Access Matrix</CardTitle>
               <CardDescription>
-                Enforced at the API route level and verified on each request.
+                Live from the roles API — matches exactly what each role can access.
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-panna-gold-50/50 border border-panna-gold-200/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-panna-gold-900">ADMIN</span>
-                  <Badge variant="gold">Highest Level</Badge>
-                </div>
-                <ul className="text-[11px] text-slate-600 space-y-1 list-disc pl-4">
-                  <li>Full System Access</li>
-                  <li>User & Staff Management</li>
-                  <li>Integrations & API Credentials</li>
-                  <li>Platform Pricing Configuration</li>
-                  <li>Financials & Gross Margins</li>
-                </ul>
+            {roleMatrixLoading ? (
+              <p className="text-sm text-slate-500">Loading roles...</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {roleMatrix.map((role) => (
+                  <div key={role.id} className="p-4 rounded-xl bg-white border border-slate-200/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900">{role.name}</span>
+                      {role.is_superuser && <Badge variant="gold">Superuser</Badge>}
+                      {role.is_system && !role.is_superuser && <Badge variant="neutral">System</Badge>}
+                      {!role.is_system && !role.is_superuser && <Badge variant="brand">Custom</Badge>}
+                    </div>
+                    <ul className="text-[11px] text-slate-600 space-y-1 list-disc pl-4">
+                      {role.permissions.length === 0 ? (
+                        <li>No permissions granted</li>
+                      ) : (
+                        role.permissions.map((p) => (
+                          <li key={`${p.module}:${p.action}`}>{p.module}: {p.action}</li>
+                        ))
+                      )}
+                    </ul>
+                    <p className="text-[10px] text-slate-400">{role.user_count} user{role.user_count === 1 ? "" : "s"}</p>
+                  </div>
+                ))}
               </div>
-
-              <div className="p-4 rounded-xl bg-panna-green-50/50 border border-panna-green-200/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-panna-green-900">MANAGER</span>
-                  <Badge variant="brand">Operational</Badge>
-                </div>
-                <ul className="text-[11px] text-slate-600 space-y-1 list-disc pl-4">
-                  <li>Multi-Platform Orders View & Update</li>
-                  <li>Menu Availability & Items</li>
-                  <li>Inventory Purchases & Wastage</li>
-                  <li>Packaging Stock Management</li>
-                  <li>Sales & Inventory Analytics</li>
-                </ul>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-slate-900">STAFF</span>
-                  <Badge variant="neutral">Kitchen</Badge>
-                </div>
-                <ul className="text-[11px] text-slate-600 space-y-1 list-disc pl-4">
-                  <li>Kitchen Order Ticket View</li>
-                  <li>Status Updates (Prep, Ready, Delivered)</li>
-                  <li>Daily Stock In / Out Operations</li>
-                  <li>Restricted from Financials & Users</li>
-                </ul>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -436,19 +448,9 @@ export default function SettingsPage() {
                   // Store GST rate and number in metadata
                   email: gstNumber ? `gst:${gstNumber}` : null,
                 } as any);
-                // Also save to localStorage as backup
-                localStorage.setItem("panna_gst_rate", gstRate);
-                localStorage.setItem("panna_gst_number", gstNumber);
-                localStorage.setItem("panna_business_name", businessName);
-                localStorage.setItem("panna_business_address", businessAddress);
                 setTaxSuccess("Tax settings saved successfully.");
               } catch (err: any) {
-                // Fallback to localStorage
-                localStorage.setItem("panna_gst_rate", gstRate);
-                localStorage.setItem("panna_gst_number", gstNumber);
-                localStorage.setItem("panna_business_name", businessName);
-                localStorage.setItem("panna_business_address", businessAddress);
-                setTaxSuccess("Tax settings saved locally.");
+                setTaxError(err?.message || "Failed to save tax settings");
               } finally {
                 setTaxSaving(false);
               }

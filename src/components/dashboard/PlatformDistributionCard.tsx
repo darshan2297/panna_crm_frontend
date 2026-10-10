@@ -8,9 +8,9 @@ interface PlatformDistributionCardProps {
 }
 
 export function PlatformDistributionCard({ kpis }: PlatformDistributionCardProps) {
-  const zomatoPct = kpis.platform_sales_pct?.ZOMATO || 40;
-  const swiggyPct = kpis.platform_sales_pct?.SWIGGY || 35;
-  const websitePct = kpis.platform_sales_pct?.WEBSITE || 25;
+  const zomatoPct = kpis.platform_sales_pct?.ZOMATO ?? 0;
+  const swiggyPct = kpis.platform_sales_pct?.SWIGGY ?? 0;
+  const websitePct = kpis.platform_sales_pct?.WEBSITE ?? 0;
 
   const zomatoSales = kpis.platform_sales?.ZOMATO || 0;
   const swiggySales = kpis.platform_sales?.SWIGGY || 0;

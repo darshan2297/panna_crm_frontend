@@ -278,7 +278,7 @@ function AnalyticsContent() {
                 Gross Profit Margin
               </p>
               <p className="text-2xl font-bold font-serif text-emerald-700 mt-1">
-                {plSummary?.gross_profit_margin_pct || 54.1}%
+                {plSummary?.gross_profit_margin_pct ?? 0}%
               </p>
               <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
                 <span>Gross Profit: {formatCurrency(plSummary?.gross_profit || 0)}</span>
@@ -297,7 +297,7 @@ function AnalyticsContent() {
                 Avg Dish Margin
               </p>
               <p className="text-2xl font-bold font-serif text-panna-green-950 mt-1">
-                {dishCosting?.avg_kitchen_margin_pct || 56.4}%
+                {dishCosting?.avg_kitchen_margin_pct ?? 0}%
               </p>
               <div className="flex items-center gap-1.5 mt-1.5 text-xs text-amber-700 font-medium">
                 {dishCosting?.low_margin_count ? (

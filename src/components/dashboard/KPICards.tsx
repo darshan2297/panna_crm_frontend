@@ -21,9 +21,9 @@ export function KPICards({ kpis, onOpenLowStock }: KPICardsProps) {
   const swiggyOrders = kpis.platform_orders?.SWIGGY || 0;
   const websiteOrders = kpis.platform_orders?.WEBSITE || 0;
 
-  const zomatoPct = kpis.platform_sales_pct?.ZOMATO || 40;
-  const swiggyPct = kpis.platform_sales_pct?.SWIGGY || 35;
-  const websitePct = kpis.platform_sales_pct?.WEBSITE || 25;
+  const zomatoPct = kpis.platform_sales_pct?.ZOMATO ?? 0;
+  const swiggyPct = kpis.platform_sales_pct?.SWIGGY ?? 0;
+  const websitePct = kpis.platform_sales_pct?.WEBSITE ?? 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
