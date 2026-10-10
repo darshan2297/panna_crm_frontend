@@ -43,11 +43,14 @@ const ACTION_HINT: Record<PermissionAction, string> = {
 
 const key = (m: PermissionModule, a: PermissionAction) => `${m}:${a}`;
 
+type RolesTab = "roles" | "matrix";
+
 export function RolesClient() {
   const [matrix, setMatrix] = useState<PermissionMatrix | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  const [activeTab, setActiveTab] = useState<RolesTab>("roles");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,10 +89,37 @@ export function RolesClient() {
 
   if (!matrix) return null;
 
+  const tabs: { id: RolesTab; label: string }[] = [
+    { id: "roles", label: "Roles" },
+    { id: "matrix", label: "Permission Matrix" },
+  ];
+
   return (
     <div className="space-y-6">
-      <RolesOverview matrix={matrix} onChanged={() => setReload((r) => r + 1)} />
-      <PermissionMatrixTable matrix={matrix} onChanged={() => setReload((r) => r + 1)} />
+      {/* Tab navigation */}
+      <div className="flex items-center gap-1 rounded-xl bg-stone-100 p-1 w-fit">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "px-4 py-2 rounded-lg text-xs font-bold transition-all",
+              activeTab === tab.id
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "roles" ? (
+        <RolesOverview matrix={matrix} onChanged={() => setReload((r) => r + 1)} />
+      ) : (
+        <PermissionMatrixTable matrix={matrix} onChanged={() => setReload((r) => r + 1)} />
+      )}
     </div>
   );
 }
