@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import {
   UtensilsCrossed,
   Plus,
@@ -26,7 +27,7 @@ import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { MenuItemModal } from "@/components/menu/MenuItemModal";
+
 import { CategoryModal } from "@/components/menu/CategoryModal";
 import { api } from "@/services/api";
 import {
@@ -39,6 +40,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 type PlatformPriceMode = "ALL" | "WEBSITE" | "ZOMATO" | "SWIGGY";
 
 function MenuManagementContent() {
+  const router = useRouter();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [summary, setSummary] = useState<MenuSummary | null>(null);
@@ -64,8 +66,6 @@ function MenuManagementContent() {
   const [pageSize, setPageSize] = useState<number>(12);
 
   // Modals
-  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null);
 
@@ -220,10 +220,7 @@ function MenuManagementContent() {
           </button>
 
           <button
-            onClick={() => {
-              setEditingItem(null);
-              setIsItemModalOpen(true);
-            }}
+            onClick={() => router.push("/menu/new")}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-panna-green-800 hover:bg-panna-green-900 rounded-lg shadow-sm shadow-panna-green-900/20 transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -452,10 +449,7 @@ function MenuManagementContent() {
           title="No dishes found"
           description="Try changing the category or search keywords, or click 'Add New Dish' to expand your menu."
           actionText="Add New Dish"
-          onAction={() => {
-            setEditingItem(null);
-            setIsItemModalOpen(true);
-          }}
+          onAction={() => router.push("/menu/new")}
         />
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
@@ -613,10 +607,7 @@ function MenuManagementContent() {
                   {/* Actions */}
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => {
-                        setEditingItem(item);
-                        setIsItemModalOpen(true);
-                      }}
+                      onClick={() => router.push(`/menu/${item.id}`)}
                       className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
                       title="Edit dish"
                     >
@@ -730,10 +721,7 @@ function MenuManagementContent() {
                     <td className="py-3 px-4 text-right">
                       <div className="inline-flex items-center gap-1">
                         <button
-                          onClick={() => {
-                            setEditingItem(item);
-                            setIsItemModalOpen(true);
-                          }}
+                          onClick={() => router.push(`/menu/${item.id}`)}
                           className="p-1 text-slate-500 hover:text-slate-900"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -814,17 +802,6 @@ function MenuManagementContent() {
           </div>
         </div>
       )}
-
-      {/* Item Modal (Create / Edit) */}
-      <MenuItemModal
-        isOpen={isItemModalOpen}
-        onClose={() => setIsItemModalOpen(false)}
-        onSuccess={() => {
-          loadMenuData();
-        }}
-        categories={categories}
-        initialItem={editingItem}
-      />
 
       {/* Category Modal (Create / Edit) */}
       <CategoryModal
