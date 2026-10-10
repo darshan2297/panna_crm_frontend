@@ -17,6 +17,7 @@ import {
 import { api } from "@/services/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type {
   PermissionAction,
   PermissionGrant,
@@ -137,15 +138,12 @@ function RolesOverview({
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Role | null>(null);
 
-  const remove = async (role: Role) => {
-    if (
-      !confirm(
-        `Delete role "${role.name}"?\n\nThis cannot be undone. Users assigned to it must be reassigned first.`
-      )
-    ) {
-      return;
-    }
+  const remove = async () => {
+    if (!confirmDelete) return;
+    const role = confirmDelete;
+    setConfirmDelete(null);
     setBusyId(role.id);
     try {
       const res = await api.deleteRole(role.id);
@@ -236,7 +234,7 @@ function RolesOverview({
               </button>
               {!role.is_system && !role.is_superuser && (
                 <button
-                  onClick={() => remove(role)}
+                  onClick={() => setConfirmDelete(role)}
                   disabled={busyId === role.id}
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
@@ -274,6 +272,18 @@ function RolesOverview({
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={`Delete role "${confirmDelete?.name ?? ""}"?`}
+        message="This cannot be undone. Users assigned to it must be reassigned first."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={busyId !== null}
+        onConfirm={remove}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }
