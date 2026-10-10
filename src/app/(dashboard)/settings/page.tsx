@@ -48,6 +48,10 @@ export default function SettingsPage() {
   const [taxSaving, setTaxSaving] = useState(false);
   const [taxSuccess, setTaxSuccess] = useState<string | null>(null);
   const [taxError, setTaxError] = useState<string | null>(null);
+  // Online-payment surcharges & VAS (notification fee)
+  const [transactionFeePercent, setTransactionFeePercent] = useState("0");
+  const [vasFee, setVasFee] = useState("0");
+  const [otherExpense, setOtherExpense] = useState("0");
   const [roleMatrix, setRoleMatrix] = useState<Role[]>([]);
   const [roleMatrixLoading, setRoleMatrixLoading] = useState(true);
 
@@ -64,11 +68,14 @@ export default function SettingsPage() {
     api.getStorefrontConfig()
       .then((res) => {
         if (res.data) {
-          const meta = (res.data as any) || {};
-          setGstRate(String(meta.gst_rate ?? "5"));
-          setGstNumber(meta.gst_number ?? "");
-          setBusinessName(res.data.brand_name || "");
-          setBusinessAddress(res.data.address_line || "");
+          const cfg = (res.data as any) || {};
+          setGstRate(String(cfg.gst_percent ?? "5"));
+          setGstNumber(cfg.gst_number ?? "");
+          setTransactionFeePercent(String(cfg.transaction_fee_percent ?? "0"));
+          setVasFee(String(cfg.vas_fee ?? "0"));
+          setOtherExpense(String(cfg.other_expense ?? "0"));
+          setBusinessName(cfg.brand_name || "");
+          setBusinessAddress(cfg.address_line || "");
         }
       })
       .catch(() => {});
@@ -203,7 +210,7 @@ export default function SettingsPage() {
           }`}
         >
           <span>💰</span>
-          <span>Tax & GST</span>
+          <span>Tax & Charges</span>
         </button>
       </div>
     </div>
@@ -411,19 +418,40 @@ export default function SettingsPage() {
     {activeTab === "tax" && (
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Tax & GST Configuration</CardTitle>
-          <CardDescription>Manage GST rates and business tax registration details.</CardDescription>
+          <CardTitle>Tax, Online Charges & VAS</CardTitle>
+          <CardDescription>GST on online orders, the payment-gateway transaction fee, and the VAS notification charge.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">GST Rate (%)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">GST on Online Orders (%)</label>
             <Input type="number" step="0.5" placeholder="5" value={gstRate} onChange={(e) => setGstRate(e.target.value)} />
-            <p className="text-[11px] text-slate-500 mt-1">Default GST rate applied to all orders (e.g., 5 for 5%)</p>
+            <p className="text-[11px] text-slate-500 mt-1">GST added to ONLINE orders only (e.g., 5 for 5%). COD orders are not charged GST.</p>
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">GST Number</label>
             <Input type="text" placeholder="27AABCP1334L1Z9" value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} />
             <p className="text-[11px] text-slate-500 mt-1">Your registered GST identification number</p>
+          </div>
+          <div className="border-t pt-4 mt-2">
+            <p className="text-xs font-semibold text-slate-700 mb-2">Online-Payment Charges (Razorpay orders only)</p>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Transaction Fee (%)</label>
+              <Input type="number" step="0.1" min="0" placeholder="2.5" value={transactionFeePercent} onChange={(e) => setTransactionFeePercent(e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Payment gateway fee added on top of online orders (e.g., 2.5 for 2.5%)</p>
+            </div>
+          </div>
+          <div className="border-t pt-4 mt-2">
+            <p className="text-xs font-semibold text-slate-700 mb-2">Value Added Service (VAS)</p>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">VAS Fee per Order (₹)</label>
+              <Input type="number" step="0.5" min="0" placeholder="5" value={vasFee} onChange={(e) => setVasFee(e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Flat charge per order covering WhatsApp / SMS / Email notifications (applies to all orders; set 0 to disable)</p>
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Other Expenses per Order (₹)</label>
+              <Input type="number" step="0.5" min="0" placeholder="0" value={otherExpense} onChange={(e) => setOtherExpense(e.target.value)} />
+              <p className="text-[11px] text-slate-500 mt-1">Internal per-order expense (packaging, misc) deducted in the margin calculation only — not charged to the customer</p>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Business Legal Name</label>
@@ -445,8 +473,11 @@ export default function SettingsPage() {
                 await api.updateStorefrontConfig({
                   brand_name: businessName,
                   address_line: businessAddress,
-                  // Store GST rate and number in metadata
-                  email: gstNumber ? `gst:${gstNumber}` : null,
+                  gst_percent: Number(gstRate) || 0,
+                  gst_number: gstNumber || null,
+                  transaction_fee_percent: Number(transactionFeePercent) || 0,
+                  vas_fee: Number(vasFee) || 0,
+                  other_expense: Number(otherExpense) || 0,
                 } as any);
                 setTaxSuccess("Tax settings saved successfully.");
               } catch (err: any) {

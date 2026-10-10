@@ -57,6 +57,7 @@ import {
   CustomerSegmentsResponse,
   DishCostingResponse,
   PLSummaryResponse,
+  RevenueBreakdownResponse,
   IntegrationConfig,
   IntegrationLog,
   IntegrationHealthSummary,
@@ -387,6 +388,13 @@ class ApiClient {
     return this.request<APIResponse<OrderDetail>>(`/orders/${id}/cancel`, {
       method: "POST",
       body: JSON.stringify({ reason }),
+    });
+  }
+
+  async refundOrder(id: number, amount?: number, reason = ""): Promise<APIResponse<OrderDetail>> {
+    return this.request<APIResponse<OrderDetail>>(`/orders/${id}/refund`, {
+      method: "POST",
+      body: JSON.stringify({ amount: amount ?? null, reason }),
     });
   }
 
@@ -913,6 +921,10 @@ class ApiClient {
 
   async getPLSummary(days = 30): Promise<APIResponse<PLSummaryResponse>> {
     return this.request<APIResponse<PLSummaryResponse>>(`/analytics/costing/summary?days=${days}`);
+  }
+
+  async getRevenueBreakdown(days = 30): Promise<APIResponse<RevenueBreakdownResponse>> {
+    return this.request<APIResponse<RevenueBreakdownResponse>>(`/analytics/revenue-breakdown?days=${days}`);
   }
 
   getAnalyticsExportUrl(dataset = "sales", days = 30): string {

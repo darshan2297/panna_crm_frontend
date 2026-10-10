@@ -186,12 +186,10 @@ function OrdersContent() {
   };
 
   const handleOpenDetail = async (orderId: number) => {
+    // Route to the dedicated full-page order view (more room for many items,
+    // payment/transaction ids, refund details and the invoice download).
     try {
-      const res = await api.getOrderDetails(orderId);
-      if (res.data) {
-        setSelectedOrder(res.data);
-        setIsDetailModalOpen(true);
-      }
+      router.push(`/orders/${orderId}`);
     } catch (err: any) {
       console.error("Failed to open order details:", err);
     }
@@ -207,6 +205,14 @@ function OrdersContent() {
 
   const handleCancelOrder = async (orderId: number, reason: string) => {
     const res = await api.cancelOrder(orderId, reason);
+    if (res.data) {
+      setSelectedOrder(res.data);
+      await loadOrders();
+    }
+  };
+
+  const handleRefundOrder = async (orderId: number, amount?: number, reason?: string) => {
+    const res = await api.refundOrder(orderId, amount, reason);
     if (res.data) {
       setSelectedOrder(res.data);
       await loadOrders();
@@ -644,6 +650,11 @@ function OrdersContent() {
                         >
                           {order.payment_status}
                         </span>
+                        {order.refund_amount != null && order.payment_status === "REFUNDED" && (
+                          <div className="text-[10px] text-rose-600 mt-0.5 font-medium">
+                            ₹{order.refund_amount.toFixed(2)} returned
+                          </div>
+                        )}
                       </td>
 
                       {/* Order Status */}
@@ -780,6 +791,7 @@ function OrdersContent() {
         }}
         onStatusUpdate={handleStatusUpdate}
         onCancelOrder={handleCancelOrder}
+        onRefundOrder={handleRefundOrder}
       />
 
       <CreateOrderModal

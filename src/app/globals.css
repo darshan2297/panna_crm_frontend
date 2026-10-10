@@ -15,6 +15,60 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * Print safety net.
+ *
+ * The order page renders a clean tax invoice in a dedicated window for the
+ * Print button (see src/lib/invoice.ts). These rules cover the case where
+ * someone uses the browser's own Ctrl+P: strip the dashboard chrome so only
+ * the order content is printed instead of the sidebar + header.
+ */
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* Hide the dashboard shell (sidebar, top header, loading bar). */
+  aside,
+  nav,
+  header,
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* Let the content expand to the full printable area. */
+  main,
+  main > div,
+  .overflow-y-auto {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body,
+  main {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Avoid ugly page breaks inside cards/tables. */
+  section,
+  table,
+  tr,
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}
+
 /* Custom Scrollbar for operational dashboard */
 ::-webkit-scrollbar {
   width: 6px;

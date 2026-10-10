@@ -31,6 +31,7 @@ import {
   CustomerSegmentsResponse,
   DishCostingResponse,
   PLSummaryResponse,
+  RevenueBreakdownResponse,
 } from "@/types";
 
 /** A chart data point — either a single day or an aggregated multi-day bucket. */
@@ -61,11 +62,12 @@ function AnalyticsContent() {
   const [customerSegments, setCustomerSegments] = useState<CustomerSegmentsResponse | null>(null);
   const [dishCosting, setDishCosting] = useState<DishCostingResponse | null>(null);
   const [plSummary, setPlSummary] = useState<PLSummaryResponse | null>(null);
+  const [revenueBreakdown, setRevenueBreakdown] = useState<RevenueBreakdownResponse | null>(null);
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
     // allSettled: one failing endpoint must not blank the whole dashboard
-    const [trendRes, topRes, platRes, velRes, segRes, costRes, plRes] = await Promise.allSettled([
+    const [trendRes, topRes, platRes, velRes, segRes, costRes, plRes, revRes] = await Promise.allSettled([
       api.getSalesTrend(days),
       api.getTopItems(days, 15, topSortBy),
       api.getPlatformBreakdown(days),
@@ -73,9 +75,10 @@ function AnalyticsContent() {
       api.getCustomerSegments(),
       api.getDishCosting(),
       api.getPLSummary(days),
+      api.getRevenueBreakdown(days),
     ]);
 
-    const failed = [trendRes, topRes, platRes, velRes, segRes, costRes, plRes]
+    const failed = [trendRes, topRes, platRes, velRes, segRes, costRes, plRes, revRes]
       .filter((r) => r.status === "rejected");
     if (failed.length > 0) {
       console.error("Some analytics endpoints failed:", failed.map((f: any) => f.reason));
@@ -88,6 +91,7 @@ function AnalyticsContent() {
     if (segRes.status === "fulfilled" && segRes.value.data) setCustomerSegments(segRes.value.data);
     if (costRes.status === "fulfilled" && costRes.value.data) setDishCosting(costRes.value.data);
     if (plRes.status === "fulfilled" && plRes.value.data) setPlSummary(plRes.value.data);
+    if (revRes.status === "fulfilled" && revRes.value.data) setRevenueBreakdown(revRes.value.data);
     setLoading(false);
   }, [days, topSortBy]);
 
@@ -713,6 +717,76 @@ function AnalyticsContent() {
       {/* TAB 3: COST & PROFIT ANALYTICS (PHASE 12) */}
       {activeTab === "costing" && (
         <div className="space-y-6">
+          {/* Revenue Bifurcation KPIs (reverse calculation) */}
+          <Card className="shadow-sm border-panna-green-900/10">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base font-serif">Revenue Bifurcation (Reverse Calculation)</CardTitle>
+                  <CardDescription className="text-xs">
+                    Menu prices include GST (backed out here); transaction fee + VAS apply to every order ({days}-day cycle)
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="border-panna-green-300 text-panna-green-800 bg-panna-green-50">
+                  Margin: {revenueBreakdown?.margin_pct ?? 0}%
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block uppercase">Total Subtotal</span>
+                  <span className="text-xl font-bold font-serif text-panna-green-950 mt-1 block">
+                    {formatCurrency(revenueBreakdown?.total_subtotal || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Goods (incl. GST)</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block uppercase">GST</span>
+                  <span className="text-xl font-bold font-serif text-slate-700 mt-1 block">
+                    - {formatCurrency(revenueBreakdown?.total_gst || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Backed out</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block uppercase">Transaction Fee</span>
+                  <span className="text-xl font-bold font-serif text-orange-600 mt-1 block">
+                    - {formatCurrency(revenueBreakdown?.total_transaction_fee || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Gateway fee</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block uppercase">VAS Fee</span>
+                  <span className="text-xl font-bold font-serif text-amber-600 mt-1 block">
+                    - {formatCurrency(revenueBreakdown?.total_vas_fee || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">WhatsApp/SMS/Email</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block uppercase">Other Expense</span>
+                  <span className="text-xl font-bold font-serif text-slate-600 mt-1 block">
+                    - {formatCurrency(revenueBreakdown?.total_other_expense || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Packaging/misc</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <span className="text-[11px] font-semibold text-emerald-700 block uppercase">Total Margin</span>
+                  <span className="text-xl font-bold font-serif text-emerald-700 mt-1 block">
+                    {formatCurrency(revenueBreakdown?.total_margin || 0)}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 block mt-0.5">
+                    {revenueBreakdown?.margin_pct ?? 0}% of revenue
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* P&L Summary Waterfall Banner */}
           <Card className="bg-gradient-to-br from-panna-green-950 via-panna-green-900 to-panna-green-950 text-white shadow-md border-0">
             <CardContent className="p-6">

@@ -23,6 +23,7 @@ import { OrderDetail, OrderStatus } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Portal } from "@/components/ui/Portal";
+import { printInvoiceHtml, printKot } from "@/lib/invoice";
 
 interface OrderDetailModalProps {
   order: OrderDetail | null;
@@ -30,6 +31,7 @@ interface OrderDetailModalProps {
   onClose: () => void;
   onStatusUpdate: (orderId: number, newStatus: OrderStatus, notes?: string) => Promise<void>;
   onCancelOrder: (orderId: number, reason: string) => Promise<void>;
+  onRefundOrder: (orderId: number, amount?: number, reason?: string) => Promise<void>;
 }
 
 export function OrderDetailModal({
@@ -38,11 +40,14 @@ export function OrderDetailModal({
   onClose,
   onStatusUpdate,
   onCancelOrder,
+  onRefundOrder,
 }: OrderDetailModalProps) {
   const [updating, setUpdating] = useState(false);
   const [statusNote, setStatusNote] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelBox, setShowCancelBox] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
+  const [showRefundBox, setShowRefundBox] = useState(false);
   const [showKotView, setShowKotView] = useState(false);
 
   React.useEffect(() => {
@@ -87,8 +92,73 @@ export function OrderDetailModal({
     }
   };
 
+  const handleRefund = async () => {
+    if (!refundReason.trim()) return;
+    try {
+      setUpdating(true);
+      await onRefundOrder(order.id, undefined, refundReason.trim());
+      setShowRefundBox(false);
+      setRefundReason("");
+    } catch (err) {
+      console.error("Failed to refund order:", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const invoiceItems = () =>
+    (order?.items ?? []).map((it) => ({
+      name: it.item_name,
+      portion: it.portion_size,
+      quantity: it.quantity,
+      unitPrice: it.unit_price,
+      totalPrice: it.total_price,
+      free: it.is_free,
+    }));
+
   const handlePrint = () => {
-    window.print();
+    if (!order) return;
+    printInvoiceHtml({
+      invoiceNumber: `INV-${order.order_number}`,
+      orderNumber: order.order_number,
+      date: order.created_at,
+      orderType: order.platform_display || order.platform,
+      paymentStatus: String(order.payment_status),
+      businessName: "Panna Biryani",
+      customerName: order.customer_name,
+      customerPhone: order.customer_phone,
+      customerAddress: order.delivery_address ?? null,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      discountLabel: null,
+      deliveryFee: order.delivery_fee,
+      total: order.total_amount,
+      gstAmount: order.tax,
+      gateway: order.gateway ?? null,
+      gatewayPaymentId: order.gateway_payment_id ?? null,
+      gatewayOrderId: order.gateway_order_id ?? null,
+      refundId: order.refund_id ?? null,
+      refundAmount: order.refund_amount ?? null,
+      refundedAt: order.refunded_at ?? null,
+      notes: order.notes ?? null,
+      items: invoiceItems(),
+    });
+  };
+
+  const handlePrintKot = () => {
+    if (!order) return;
+    printKot({
+      orderNumber: order.order_number,
+      date: order.created_at,
+      platform: order.platform_display || order.platform,
+      customerName: order.customer_name,
+      customerPhone: order.customer_phone,
+      address: order.delivery_address ?? null,
+      orderType: order.delivery_address ? "Delivery" : "Pickup",
+      paymentStatus: String(order.payment_status),
+      notes: order.notes ?? null,
+      items: invoiceItems(),
+    });
   };
 
   const getPlatformBadge = (platform: string) => {
@@ -122,6 +192,20 @@ export function OrderDetailModal({
         return <Badge variant="neutral">{status}</Badge>;
     }
   };
+
+  // Reverse-calculation breakdown (tax-inclusive pricing model).
+  // Menu/order prices already include GST, so GST is backed OUT of the goods
+  // amount, then the transaction fee, VAS, other expenses and food cost are
+  // deducted to arrive at the true margin.
+  const goodsIncl = Math.max(0, (order?.subtotal ?? 0) - (order?.discount ?? 0));
+  const gstIncluded = order?.tax ?? 0;
+  const goodsExcl = Math.max(0, goodsIncl - gstIncluded);
+  const txnFee = order?.transaction_fee ?? 0;
+  const vasFee = order?.vas_fee ?? 0;
+  const otherExp = order?.other_expense ?? 0;
+  const foodCost = order?.food_cost ?? 0;
+  const orderMargin =
+    (order?.total_amount ?? 0) - gstIncluded - txnFee - vasFee - otherExp - foodCost;
 
   return (
     <Portal>
@@ -162,9 +246,9 @@ export function OrderDetailModal({
               <span>{showKotView ? "Full View" : "KOT Slip"}</span>
             </button>
             <button
-              onClick={handlePrint}
+              onClick={showKotView ? handlePrintKot : handlePrint}
               className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              title="Print Order / Receipt"
+              title={showKotView ? "Print kitchen order ticket" : "Print tax invoice"}
             >
               <Printer className="w-5 h-5" />
             </button>
@@ -219,7 +303,7 @@ export function OrderDetailModal({
 
               <div className="pt-4 text-center">
                 <button
-                  onClick={handlePrint}
+                  onClick={handlePrintKot}
                   className="px-4 py-2 bg-[#0C3823] text-white rounded-lg text-xs font-sans font-bold hover:bg-[#072316] transition-colors"
                 >
                   Print KOT
@@ -316,11 +400,16 @@ export function OrderDetailModal({
                   ))}
                 </div>
 
-                {/* Billing Summary */}
+                {/* Reverse-calculation breakdown (CRM-only) */}
                 <div className="p-4 bg-gray-50/60 border-t border-gray-100 space-y-2 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-700 uppercase tracking-wide">
+                    <Receipt className="w-3.5 h-3.5" />
+                    Reverse calculation (price includes GST)
+                  </div>
+
                   <div className="flex justify-between text-gray-600">
-                    <span>Subtotal (Base)</span>
-                    <span className="font-mono">₹{(order.subtotal - order.tax).toFixed(2)}</span>
+                    <span>Subtotal (menu prices, incl. GST)</span>
+                    <span className="font-mono">₹{order.subtotal.toFixed(2)}</span>
                   </div>
                   {order.discount > 0 && (
                     <div className="flex justify-between text-emerald-700 font-semibold">
@@ -329,16 +418,60 @@ export function OrderDetailModal({
                     </div>
                   )}
                   <div className="flex justify-between text-gray-600">
+                    <span>Goods amount (tax-inclusive)</span>
+                    <span className="font-mono">₹{goodsIncl.toFixed(2)}</span>
+                  </div>
+                  {gstIncluded > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>GST included (backed out)</span>
+                      <span className="font-mono">-₹{gstIncluded.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-gray-600 font-semibold">
+                    <span>GST removed (base)</span>
+                    <span className="font-mono">₹{goodsExcl.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
                     <span>Delivery Fee</span>
                     <span className="font-mono">₹{order.delivery_fee.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>GST (5%)</span>
-                    <span className="font-mono">₹{order.tax.toFixed(2)}</span>
-                  </div>
                   <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
-                    <span>Grand Total</span>
+                    <span>Final Customer Price</span>
                     <span className="font-mono text-[#0C3823]">₹{order.total_amount.toFixed(2)}</span>
+                  </div>
+
+                  <div className="pt-2 mt-1 border-t border-gray-200 space-y-1.5 text-[11px]">
+                    <p className="font-bold text-gray-700 uppercase tracking-wide">
+                      Deductions → Margin
+                    </p>
+                    {txnFee > 0 && (
+                      <div className="flex justify-between text-gray-500">
+                        <span>Transaction Fee</span>
+                        <span className="font-mono">-₹{txnFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {vasFee > 0 && (
+                      <div className="flex justify-between text-gray-500">
+                        <span>VAS (WhatsApp/SMS/Email)</span>
+                        <span className="font-mono">-₹{vasFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-gray-500">
+                      <span>Other expenses (per order)</span>
+                      <span className="font-mono">-₹{otherExp.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500">
+                      <span>Food cost</span>
+                      <span className="font-mono">-₹{foodCost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-gray-200">
+                      <span>Total Margin</span>
+                      <span
+                        className={`font-mono ${orderMargin >= 0 ? "text-emerald-700" : "text-rose-700"}`}
+                      >
+                        ₹{orderMargin.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
 
                   {order.estimated_commission > 0 && (
@@ -480,6 +613,24 @@ export function OrderDetailModal({
                   </div>
                 )}
 
+                {/* Refund for paid online orders */}
+                {order.payment_status === "PAID" && order.gateway_payment_id && (
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-center text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
+                      disabled={updating}
+                      onClick={() => setShowRefundBox(true)}
+                    >
+                      <Receipt className="w-4 h-4 mr-2" />
+                      Refund Payment (Razorpay)
+                    </Button>
+                    <p className="text-[10px] text-gray-400 text-center">
+                      Paid via {order.gateway || "gateway"} • Ref {order.gateway_payment_id}
+                    </p>
+                  </div>
+                )}
+
                 {/* Transition Note Input (if order active) */}
                 {["NEW", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY"].includes(order.order_status) && (
                   <div>
@@ -524,6 +675,42 @@ export function OrderDetailModal({
                         onClick={handleCancel}
                       >
                         Confirm Cancellation
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Refund Box Modal */}
+                {showRefundBox && (
+                  <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 space-y-2 animate-fade-in">
+                    <label className="block text-xs font-bold text-orange-800">
+                      Reason for Refund:
+                    </label>
+                    <textarea
+                      value={refundReason}
+                      onChange={(e) => setRefundReason(e.target.value)}
+                      placeholder="e.g., Order cancelled, duplicate payment..."
+                      className="w-full p-2 text-xs rounded-lg border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      rows={2}
+                    />
+                    <p className="text-[10px] text-orange-700">
+                      Full refund of ₹{order.total_amount.toFixed(2)} will be sent to the customer&apos;s original payment method via Razorpay.
+                    </p>
+                    <div className="flex justify-end space-x-2 pt-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowRefundBox(false)}
+                      >
+                        Keep Payment
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={!refundReason.trim() || updating}
+                        onClick={handleRefund}
+                      >
+                        Confirm Refund
                       </Button>
                     </div>
                   </div>

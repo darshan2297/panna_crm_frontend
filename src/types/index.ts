@@ -214,6 +214,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  cost_price?: number;
   is_free?: boolean;
   created_at?: string;
 }
@@ -249,10 +250,19 @@ export interface Order {
   subtotal: number;
   discount: number;
   delivery_fee: number;
+  transaction_fee?: number;
+  vas_fee?: number;
+  other_expense?: number;
   tax: number;
   total_amount: number;
   order_status: OrderStatus | string;
   payment_status: PaymentStatus | string;
+  gateway?: string | null;
+  gateway_payment_id?: string | null;
+  gateway_order_id?: string | null;
+  refund_id?: string | null;
+  refund_amount?: number | null;
+  refunded_at?: string | null;
   items_summary?: string | null;
   notes?: string | null;
   created_at: string;
@@ -266,6 +276,7 @@ export interface OrderDetail extends Order {
   customer?: CustomerBrief | null;
   platform_display: string;
   estimated_commission: number;
+  food_cost?: number;
 }
 
 export interface OrderStatusSummary {
@@ -1048,6 +1059,21 @@ export interface PLSummaryResponse {
   gross_profit: number;
   gross_profit_margin_pct: number;
   orders_count: number;
+}
+
+// Reverse-calculation revenue bifurcation KPIs (tax-inclusive model)
+export interface RevenueBreakdownResponse {
+  total_orders: number;
+  total_subtotal: number;
+  total_delivery: number;
+  total_gst: number;
+  total_transaction_fee: number;
+  total_vas_fee: number;
+  total_other_expense: number;
+  total_food_cost: number;
+  total_revenue: number;
+  total_margin: number;
+  margin_pct: number;
 }
 
 // ── Phase 13: Integrations & Webhooks ─────────────────────────────
