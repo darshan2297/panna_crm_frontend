@@ -117,15 +117,15 @@ export default function FAQsPage() {
               <tbody>
                 {faqs.map((f) => (
                   <tr key={f.id} className="border-b last:border-0">
-                    <td className="py-2 max-w-xs"><p className="font-semibold truncate" title={f.question}>{f.question}</p></td>
-                    <td className="max-w-md"><p className="truncate text-gray-600" title={f.answer}>{f.answer}</p></td>
-                    <td><Badge>{CATEGORY_LABELS[f.category] || f.category}</Badge></td>
-                    <td>
+                    <td className="py-2 px-4 max-w-xs"><p className="font-semibold truncate" title={f.question}>{f.question}</p></td>
+                    <td className="px-4 max-w-md"><p className="truncate text-gray-600" title={f.answer}>{f.answer}</p></td>
+                    <td className="px-4"><Badge>{CATEGORY_LABELS[f.category] || f.category}</Badge></td>
+                    <td className="px-4">
                       <button onClick={async () => { await api.updateFAQ(f.id, { is_active: !f.is_active }); setFaqs((c) => c.map((x) => x.id === f.id ? { ...x, is_active: !x.is_active } : x)); }}>
                         <Badge variant={f.is_active ? "success" : "danger"}>{f.is_active ? "Active" : "Inactive"}</Badge>
                       </button>
                     </td>
-                    <td className="text-right">
+                    <td className="px-4 text-right">
                       <button className="mr-2 text-gray-500" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></button>
                       <button className="text-red-500" onClick={() => openDeleteConfirm(f.id, f.question)}><Trash2 className="h-4 w-4" /></button>
                     </td>

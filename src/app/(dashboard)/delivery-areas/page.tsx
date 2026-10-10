@@ -121,17 +121,17 @@ export default function DeliveryAreasPage() {
               <tbody>
                 {areas.map((a) => (
                   <tr key={a.id} className="border-b last:border-0">
-                    <td className="py-2 font-semibold">{a.name}</td>
-                    <td className="font-mono">{a.pincode}</td>
-                    <td className="font-bold text-emerald-700">{a.delivery_fee === 0 ? "FREE" : `₹${a.delivery_fee}`}</td>
-                    <td>{a.estimated_minutes} mins</td>
-                    <td>{a.min_order > 0 ? `₹${a.min_order}` : "—"}</td>
-                    <td>
+                    <td className="py-2 px-4 font-semibold">{a.name}</td>
+                    <td className="px-4 font-mono">{a.pincode}</td>
+                    <td className="px-4 font-bold text-emerald-700">{a.delivery_fee === 0 ? "FREE" : `₹${a.delivery_fee}`}</td>
+                    <td className="px-4">{a.estimated_minutes} mins</td>
+                    <td className="px-4">{a.min_order > 0 ? `₹${a.min_order}` : "—"}</td>
+                    <td className="px-4">
                       <button onClick={async () => { await api.updateDeliveryArea(a.id, { is_active: !a.is_active }); setAreas((c) => c.map((x) => x.id === a.id ? { ...x, is_active: !x.is_active } : x)); }}>
                         <Badge variant={a.is_active ? "success" : "danger"}>{a.is_active ? "Active" : "Inactive"}</Badge>
                       </button>
                     </td>
-                    <td className="text-right">
+                    <td className="px-4 text-right">
                       <button className="mr-2 text-gray-500" onClick={() => openEdit(a)}><Pencil className="h-4 w-4" /></button>
                       <button className="text-red-500" onClick={() => openDeleteConfirm(a.id, a.name)}><Trash2 className="h-4 w-4" /></button>
                     </td>

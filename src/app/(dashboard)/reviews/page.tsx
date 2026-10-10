@@ -125,20 +125,20 @@ export default function ReviewsPage() {
               <tbody>
                 {reviews.map((r) => (
                   <tr key={r.id} className="border-b last:border-0">
-                    <td className="py-2">
+                    <td className="py-2 px-4">
                       <div className="font-semibold">{r.customer_name}</div>
                       {r.location && <div className="text-xs text-gray-400">{r.location}</div>}
                     </td>
-                    <td>{renderStars(r.rating)}</td>
-                    <td className="max-w-xs"><p className="truncate text-gray-600" title={r.review_text}>{r.review_text}</p></td>
-                    <td>{r.dish_loved || "—"}</td>
-                    <td>{r.verified_order ? <Badge variant="success">Verified</Badge> : <Badge>Guest</Badge>}</td>
-                    <td>
+                    <td className="px-4">{renderStars(r.rating)}</td>
+                    <td className="px-4 max-w-xs"><p className="truncate text-gray-600" title={r.review_text}>{r.review_text}</p></td>
+                    <td className="px-4">{r.dish_loved || "—"}</td>
+                    <td className="px-4">{r.verified_order ? <Badge variant="success">Verified</Badge> : <Badge>Guest</Badge>}</td>
+                    <td className="px-4">
                       <button onClick={async () => { await api.updateReview(r.id, { is_active: !r.is_active }); setReviews((c) => c.map((x) => x.id === r.id ? { ...x, is_active: !x.is_active } : x)); }}>
                         <Badge variant={r.is_active ? "success" : "danger"}>{r.is_active ? "Active" : "Inactive"}</Badge>
                       </button>
                     </td>
-                    <td className="text-right">
+                    <td className="px-4 text-right">
                       <button className="mr-2 text-gray-500" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></button>
                       <button className="text-red-500" onClick={() => openDeleteConfirm(r.id, r.customer_name)}><Trash2 className="h-4 w-4" /></button>
                     </td>
