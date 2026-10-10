@@ -52,9 +52,7 @@ export default function LoginPage() {
 
         {/* Top Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-panna-gold-500 to-panna-gold-600 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-panna-gold-500/20">
-            <span className="font-serif text-2xl">P</span>
-          </div>
+          <img src="/brand/panna-logo.png" alt="Panna Biryani logo" className="w-11 h-11 rounded-full shadow-lg shadow-panna-gold-500/20" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-serif text-2xl font-bold tracking-wide">Panna</span>
@@ -111,8 +109,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           {/* Header Mobile Logo */}
           <div className="text-center lg:text-left space-y-2">
-            <div className="lg:hidden inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-panna-gold-500 to-panna-gold-600 text-slate-950 font-black font-serif text-2xl mx-auto shadow-md mb-2">
-              P
+            <div className="lg:hidden inline-flex items-center justify-center w-12 h-12 mx-auto mb-2">
+              <img src="/brand/panna-logo.png" alt="Panna Biryani logo" className="w-12 h-12 rounded-full shadow-md" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">
               Sign In to Panna CRM
