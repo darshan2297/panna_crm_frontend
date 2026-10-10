@@ -16,6 +16,7 @@ import { api } from "@/services/api";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Order, OrderStatus } from "@/types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { playSound } from "@/lib/notificationSound";
 import Link from "next/link";
 
 const ACTIVE_STATUSES: OrderStatus[] = [
@@ -56,20 +57,6 @@ function LiveOrdersInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const socketRef = useRef<Socket | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const playOrderSound = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!audioRef.current) {
-      audioRef.current = new Audio("/sounds/order-notification.mp3");
-      audioRef.current.volume = 0.7;
-    }
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => {
-      // Autoplay may be blocked until user interacts with the page
-    });
-  }, []);
-
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
@@ -127,7 +114,9 @@ function LiveOrdersInner() {
     });
     socket.on("new_order", () => {
       loadOrders();
-      playOrderSound();
+      // Distinct cue from routine notifications, so a new order is never
+      // mistaken for a badge update.
+      playSound("order-received");
     });
     socket.on("order_status_changed", () => loadOrders());
     socket.on("shop_status_changed", (p: { platform: string; shop_open: boolean }) => {

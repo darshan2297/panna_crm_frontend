@@ -17,6 +17,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/services/api";
 import { getSocket } from "@/services/socket";
+import { playSound } from "@/lib/notificationSound";
 import { Badge } from "../ui/Badge";
 import { NotificationDrawer } from "../notifications/NotificationDrawer";
 
@@ -88,6 +89,9 @@ export function Header() {
       } else {
         fetchUnreadCount();
       }
+      // Generic notification cue. New orders get their own distinct sound on
+      // the Live Orders screen, so the two are never confused.
+      playSound("notification");
     };
 
     socket.on("connect", onConnect);
