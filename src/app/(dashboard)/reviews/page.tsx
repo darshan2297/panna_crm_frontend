@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/services/api";
 import { Review } from "@/types";
 
@@ -24,6 +25,8 @@ export default function ReviewsPage() {
   const [form, setForm] = useState<any>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Review | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +51,24 @@ export default function ReviewsPage() {
       sort_order: r.sort_order,
     });
     setModalOpen(true);
+  };
+
+  const openDeleteConfirm = (id: number, name: string) => {
+    setDeleteTarget({ id, customer_name: name } as Review);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteReview(deleteTarget.id);
+      setReviews((c) => c.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (e: any) {
+      setError(e.message || "Failed to delete review");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const save = async () => {
@@ -119,7 +140,7 @@ export default function ReviewsPage() {
                     </td>
                     <td className="text-right">
                       <button className="mr-2 text-gray-500" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></button>
-                      <button className="text-red-500" onClick={async () => { if (confirm("Delete this review?")) { await api.deleteReview(r.id); setReviews((c) => c.filter((x) => x.id !== r.id)); } }}><Trash2 className="h-4 w-4" /></button>
+                      <button className="text-red-500" onClick={() => openDeleteConfirm(r.id, r.customer_name)}><Trash2 className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 ))}
@@ -156,6 +177,17 @@ export default function ReviewsPage() {
           <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete review?"
+        message={`Are you sure you want to delete the review from "${deleteTarget?.customer_name ?? ""}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

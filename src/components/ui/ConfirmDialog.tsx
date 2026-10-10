@@ -1,12 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, Trash2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
  * System-styled confirmation dialog — replaces the browser's native
  * confirm() so destructive actions match the CRM's own design.
+ *
+ * Rendered through a portal to document.body so the backdrop always
+ * covers the full viewport regardless of any ancestor stacking context,
+ * and body scroll is locked while it is open.
  */
 export function ConfirmDialog({
   open,
@@ -29,13 +34,23 @@ export function ConfirmDialog({
   onCancel: () => void;
   loading?: boolean;
 }) {
+  // Lock body scroll while the dialog is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const Icon = variant === "info" ? Info : variant === "warning" ? AlertTriangle : Trash2;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {/* Backdrop — covers the full viewport and dims every layer below. */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onCancel}
@@ -97,6 +112,7 @@ export function ConfirmDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

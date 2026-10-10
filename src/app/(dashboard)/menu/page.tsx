@@ -34,6 +34,7 @@ import {
   MenuItem,
   MenuSummary,
 } from "@/types";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type PlatformPriceMode = "ALL" | "WEBSITE" | "ZOMATO" | "SWIGGY";
 
@@ -55,6 +56,8 @@ function MenuManagementContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [platformView, setPlatformView] = useState<PlatformPriceMode>("ALL");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Pagination
   const [page, setPage] = useState<number>(1);
@@ -129,19 +132,18 @@ function MenuManagementContent() {
   };
 
   // Delete item
-  const handleDeleteItem = async (item: MenuItem) => {
-    if (!confirm(`Are you sure you want to remove "${item.name}" from the menu?`)) {
-      return;
-    }
-    try {
-      const res = await api.deleteMenuItem(item.id);
-      if (res.success) {
-        setItems((prev) => prev.filter((i) => i.id !== item.id));
-        loadMenuData();
+  const handleDeleteItem = (item: MenuItem) => {
+    setConfirmAction(() => async () => {
+      try {
+        const res = await api.deleteMenuItem(item.id);
+        if (res.success) {
+          setItems((prev) => prev.filter((i) => i.id !== item.id));
+          loadMenuData();
+        }
+      } catch (err: any) {
+        alert(`Failed to delete item: ${err.message}`);
       }
-    } catch (err: any) {
-      alert(`Failed to delete item: ${err.message}`);
-    }
+    });
   };
 
   // Filter items
@@ -833,7 +835,21 @@ function MenuManagementContent() {
         }}
         initialCategory={editingCategory}
       />
-    </div>
+          <ConfirmDialog
+        open={confirmAction !== null}
+        title="Delete Menu Item"
+        message="Are you sure you want to remove this item from the menu?"
+        confirmLabel="Delete"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+</div>
   );
 }
 

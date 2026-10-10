@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/services/api";
 import { PaymentMethodConfig, StorefrontConfig } from "@/types";
 
@@ -81,6 +82,8 @@ export default function WebsiteConfigPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [newPm, setNewPm] = useState({ key: "", label: "", description: "" });
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -229,10 +232,11 @@ export default function WebsiteConfigPage() {
                     await api.updatePaymentMethod(pm.id, { enabled: v });
                     setPaymentMethods((m) => m.map((x) => (x.id === pm.id ? { ...x, enabled: v } : x)));
                   }} label={pm.enabled ? "Enabled" : "Disabled"} />
-                  <button className="text-red-500" onClick={async () => {
-                    if (!confirm("Delete this payment method?")) return;
-                    await api.deletePaymentMethod(pm.id);
-                    setPaymentMethods((m) => m.filter((x) => x.id !== pm.id));
+                  <button className="text-red-500" onClick={() => {
+                    setConfirmAction(() => async () => {
+                      await api.deletePaymentMethod(pm.id);
+                      setPaymentMethods((m) => m.filter((x) => x.id !== pm.id));
+                    });
                   }}><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
@@ -252,6 +256,21 @@ export default function WebsiteConfigPage() {
             </div>
           </CardContent>
         </Card>
-    </div>
+          <ConfirmDialog
+        open={confirmAction !== null}
+        title="Delete Payment Method"
+        message="Are you sure you want to delete this payment method?"
+        confirmLabel="Delete"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+</div>
   );
 }

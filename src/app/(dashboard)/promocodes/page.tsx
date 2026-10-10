@@ -10,12 +10,15 @@ import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { api } from "@/services/api";
 import { PromoCode } from "@/types";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function PromoCodesPage() {
   const router = useRouter();
   const [codes, setCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,14 +46,15 @@ export default function PromoCodesPage() {
     }
   };
 
-  const remove = async (pc: PromoCode) => {
-    if (!confirm(`Delete promo code ${pc.code}? This cannot be undone.`)) return;
-    try {
-      await api.deletePromoCode(pc.id);
-      setCodes((c) => c.filter((x) => x.id !== pc.id));
-    } catch (e: any) {
-      setError(e?.message || "Failed to delete promo code");
-    }
+  const remove = (pc: PromoCode) => {
+    setConfirmAction(() => async () => {
+      try {
+        await api.deletePromoCode(pc.id);
+        setCodes((c) => c.filter((x) => x.id !== pc.id));
+      } catch (e: any) {
+        setError(e?.message || "Failed to delete promo code");
+      }
+    });
   };
 
   return (
@@ -218,6 +222,21 @@ export default function PromoCodesPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+          <ConfirmDialog
+        open={confirmAction !== null}
+        title="Delete Promo Code"
+        message="Are you sure you want to delete this promo code? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+</div>
   );
 }

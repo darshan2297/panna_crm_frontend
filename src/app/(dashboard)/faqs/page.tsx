@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/services/api";
 import { FAQ } from "@/types";
 
@@ -30,6 +31,8 @@ export default function FAQsPage() {
   const [form, setForm] = useState<any>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FAQ | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -51,6 +54,24 @@ export default function FAQsPage() {
       sort_order: f.sort_order,
     });
     setModalOpen(true);
+  };
+
+  const openDeleteConfirm = (id: number, question: string) => {
+    setDeleteTarget({ id, question } as FAQ);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteFAQ(deleteTarget.id);
+      setFaqs((c) => c.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (e: any) {
+      setError(e.message || "Failed to delete FAQ");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const save = async () => {
@@ -106,7 +127,7 @@ export default function FAQsPage() {
                     </td>
                     <td className="text-right">
                       <button className="mr-2 text-gray-500" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></button>
-                      <button className="text-red-500" onClick={async () => { if (confirm("Delete this FAQ?")) { await api.deleteFAQ(f.id); setFaqs((c) => c.filter((x) => x.id !== f.id)); } }}><Trash2 className="h-4 w-4" /></button>
+                      <button className="text-red-500" onClick={() => openDeleteConfirm(f.id, f.question)}><Trash2 className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 ))}
@@ -141,6 +162,17 @@ export default function FAQsPage() {
           <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete FAQ?"
+        message={`Are you sure you want to delete the FAQ "${deleteTarget?.question ?? ""}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

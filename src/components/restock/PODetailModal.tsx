@@ -20,6 +20,7 @@ import { Modal } from "@/components/ui/Modal";
 import { api } from "@/services/api";
 import { RestockOrder, RestockOrderStatus } from "@/types";
 import { Badge } from "@/components/ui/Badge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface PODetailModalProps {
   po: RestockOrder | null;
@@ -37,6 +38,8 @@ export function PODetailModal({
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   if (!po) return null;
 
@@ -55,31 +58,25 @@ export function PODetailModal({
     }
   };
 
-  const handleReceiveStock = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to receive all items from ${po.po_number}? This will automatically add stock to ingredients & packaging in the kitchen.`
-      )
-    ) {
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    try {
-      await api.receiveRestockOrder(po.id);
-      setSuccessMessage(
-        "Stock successfully received! All kitchen inventory balances have been increased and Stock-In transactions recorded."
-      );
-      onSuccess();
-    } catch (err: any) {
-      setErrorMessage(
-        err?.message || "Failed to receive stock. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
+  const handleReceiveStock = () => {
+    setConfirmAction(() => async () => {
+      setLoading(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      try {
+        await api.receiveRestockOrder(po.id);
+        setSuccessMessage(
+          "Stock successfully received! All kitchen inventory balances have been increased and Stock-In transactions recorded."
+        );
+        onSuccess();
+      } catch (err: any) {
+        setErrorMessage(
+          err?.message || "Failed to receive stock. Please try again."
+        );
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
   const handleShareWhatsApp = () => {
@@ -333,6 +330,21 @@ export function PODetailModal({
           </div>
         </div>
       </div>
-    </Modal>
+          <ConfirmDialog
+        open={confirmAction !== null}
+        title="Receive Stock"
+        message="Are you sure you want to receive all items? This will add stock to kitchen inventory."
+        confirmLabel="Receive Stock"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+</Modal>
   );
 }

@@ -5,6 +5,7 @@ import { Trash2, Inbox, CheckCheck, MailOpen, Mail, Phone, Calendar, Users } fro
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/services/api";
 import { ContactInquiry } from "@/types";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,8 @@ export default function InquiriesPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ContactInquiry | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -51,10 +54,18 @@ export default function InquiriesPage() {
     if (res.data) setItems((c) => c.map((x) => (x.id === i.id ? res.data! : x)));
   };
 
-  const remove = async (i: ContactInquiry) => {
-    if (!confirm("Delete this enquiry?")) return;
-    await api.deleteContactInquiry(i.id);
-    setItems((c) => c.filter((x) => x.id !== i.id));
+  const remove = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteContactInquiry(deleteTarget.id);
+      setItems((c) => c.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (e: any) {
+      setError(e.message || "Failed to delete enquiry");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const parseDetails = (json: string | null): Record<string, any> => {
@@ -146,7 +157,7 @@ export default function InquiriesPage() {
                         >
                           <CheckCheck className="h-4 w-4" />
                         </button>
-                        <button onClick={() => remove(i)} className="p-1.5 text-gray-400 hover:text-red-500">
+                        <button onClick={() => setDeleteTarget(i)} className="p-1.5 text-gray-400 hover:text-red-500">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -193,6 +204,17 @@ export default function InquiriesPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete enquiry?"
+        message="Are you sure you want to delete this enquiry? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={remove}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

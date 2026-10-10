@@ -47,6 +47,7 @@ import {
   InventoryTransactionInput,
   InventoryTransactionType,
 } from "@/types";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type ViewTab = "all" | "low_stock" | "transactions";
 type StatusFilter = "ALL" | "IN_STOCK" | "LOW_STOCK" | "CRITICAL_STOCK" | "OUT_OF_STOCK";
@@ -95,6 +96,8 @@ function InventoryManagementContent() {
   const [lowStockPage, setLowStockPage] = useState<number>(1);
   const [lowStockPageSize, setLowStockPageSize] = useState<number>(10);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Modals state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -153,14 +156,15 @@ function InventoryManagementContent() {
   };
 
   // Handle Delete Item
-  const handleDeleteItem = async (item: InventoryItem) => {
-    if (!window.confirm(`Are you sure you want to deactivate '${item.name}'?`)) return;
-    try {
-      await api.deleteInventoryItem(item.id);
-      await loadData(true);
-    } catch (err: any) {
-      alert(err?.message || "Failed to delete item.");
-    }
+  const handleDeleteItem = (item: InventoryItem) => {
+    setConfirmAction(() => async () => {
+      try {
+        await api.deleteInventoryItem(item.id);
+        await loadData(true);
+      } catch (err: any) {
+        alert(err?.message || "Failed to delete item.");
+      }
+    });
   };
 
   // Handle Quick Stock Adjustment
@@ -1154,7 +1158,21 @@ function InventoryManagementContent() {
         items={items}
         selectedItem={adjustTargetItem}
       />
-    </div>
+          <ConfirmDialog
+        open={confirmAction !== null}
+        title="Deactivate Ingredient"
+        message="Are you sure you want to deactivate this ingredient?"
+        confirmLabel="Deactivate"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+</div>
   );
 }
 

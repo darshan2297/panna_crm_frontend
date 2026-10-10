@@ -42,6 +42,7 @@ import {
   NotificationChannel,
   NotificationSeverity,
 } from "@/types";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type ViewTab = "planner" | "purchase_orders" | "notifications";
 
@@ -95,6 +96,8 @@ function RestockManagementContent() {
   const [orderPageSize, setOrderPageSize] = useState(10);
   const [notifPage, setNotifPage] = useState(1);
   const [notifPageSize, setNotifPageSize] = useState(10);
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Load all data
   const loadData = async () => {
@@ -172,23 +175,17 @@ function RestockManagementContent() {
   };
 
   // Direct 1-Click Receive Stock
-  const handleDirectReceiveStock = async (po: RestockOrder) => {
-    if (
-      !window.confirm(
-        `Receive goods from PO ${po.po_number}? This will update kitchen stock levels.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await api.receiveRestockOrder(po.id);
-      await loadData();
-      setFeedback(`PO ${po.po_number} successfully received into kitchen stock!`);
-      setTimeout(() => setFeedback(null), 5000);
-    } catch (err: any) {
-      alert(err?.message || "Failed to receive PO stock");
-    }
+  const handleDirectReceiveStock = (po: RestockOrder) => {
+    setConfirmAction(() => async () => {
+      try {
+        await api.receiveRestockOrder(po.id);
+        await loadData();
+        setFeedback(`PO ${po.po_number} successfully received into kitchen stock!`);
+        setTimeout(() => setFeedback(null), 5000);
+      } catch (err: any) {
+        alert(err?.message || "Failed to receive PO stock");
+      }
+    });
   };
 
   // Open Dispatch Modal
@@ -1118,35 +1115,19 @@ function RestockManagementContent() {
         )}
       </div>
 
-      {/* Modals */}
-      <CreatePOModal
-        isOpen={createPOOpen}
-        onClose={() => setCreatePOOpen(false)}
-        onSuccess={() => {
-          loadData();
-          setFeedback("New purchase order successfully drafted!");
-          setTimeout(() => setFeedback(null), 5000);
+      <ConfirmDialog
+        open={confirmAction !== null}
+        title="Receive Stock"
+        message="Receive goods from this PO? This will update kitchen stock levels."
+        confirmLabel="Receive Stock"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
         }}
-        preselectedItems={preselectedSuggestions}
-        availableSuggestions={suggestions}
-      />
-
-      <PODetailModal
-        po={selectedPO}
-        isOpen={poDetailOpen}
-        onClose={() => setPODetailOpen(false)}
-        onSuccess={() => {
-          loadData();
-        }}
-      />
-
-      <DispatchAlertModal
-        notification={selectedNotif}
-        isOpen={dispatchModalOpen}
-        onClose={() => setDispatchModalOpen(false)}
-        onSuccess={() => {
-          loadData();
-        }}
+        onCancel={() => setConfirmAction(null)}
       />
     </div>
   );

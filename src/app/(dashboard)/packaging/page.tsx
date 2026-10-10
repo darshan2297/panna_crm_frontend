@@ -42,6 +42,7 @@ import {
   PackagingOrderSimulationItem,
   PackagingOrderSimulationResponse,
 } from "@/types";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type ViewTab = "items" | "stock" | "consumption";
 type StatusFilter = "ALL" | "IN_STOCK" | "LOW_STOCK" | "CRITICAL_STOCK" | "OUT_OF_STOCK";
@@ -110,6 +111,8 @@ function PackagingDashboardContent() {
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [adjustingItem, setAdjustingItem] = useState<PackagingItem | null>(null);
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Load Data
   const loadData = useCallback(async (isSilent = false) => {
@@ -259,16 +262,15 @@ function PackagingDashboardContent() {
     await loadData(true);
   };
 
-  const handleDeleteItem = async (id: number, name: string) => {
-    if (!window.confirm(`Are you sure you want to deactivate packaging item "${name}"?`)) {
-      return;
-    }
-    try {
-      await api.deletePackagingItem(id);
-      await loadData(true);
-    } catch (err: any) {
-      alert(err?.message || "Failed to delete item.");
-    }
+  const handleDeleteItem = (id: number, name: string) => {
+    setConfirmAction(() => async () => {
+      try {
+        await api.deletePackagingItem(id);
+        await loadData(true);
+      } catch (err: any) {
+        alert(err?.message || "Failed to delete item.");
+      }
+    });
   };
 
   const handleAdjustStock = async (itemId: number, payload: PackagingTransactionInput) => {
@@ -288,18 +290,19 @@ function PackagingDashboardContent() {
     handleSimulate();
   };
 
-  const handleDeleteRule = async (id: number) => {
-    if (!window.confirm("Remove this packaging consumption rule?")) return;
-    try {
-      await api.deletePackagingRule(id);
-      const res = await api.getPackagingRules();
-      if (res.success && res.data) {
-        setRules(res.data);
+  const handleDeleteRule = (id: number) => {
+    setConfirmAction(() => async () => {
+      try {
+        await api.deletePackagingRule(id);
+        const res = await api.getPackagingRules();
+        if (res.success && res.data) {
+          setRules(res.data);
+        }
+        handleSimulate();
+      } catch (err: any) {
+        alert(err?.message || "Failed to delete rule.");
       }
-      handleSimulate();
-    } catch (err: any) {
-      alert(err?.message || "Failed to delete rule.");
-    }
+    });
   };
 
   const openAdjustModal = (item?: PackagingItem) => {
@@ -1417,7 +1420,22 @@ function PackagingDashboardContent() {
       onSubmit={handleCreateRule}
       items={items}
     />
-  </>
+        <ConfirmDialog
+        open={confirmAction !== null}
+        title="Confirm Action"
+        message="Are you sure you want to proceed with this action?"
+        confirmLabel="Confirm"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          setConfirmBusy(true);
+          try { await confirmAction(); } finally { setConfirmBusy(false); setConfirmAction(null); }
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+</>
   );
 }
 
