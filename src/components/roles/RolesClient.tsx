@@ -501,7 +501,7 @@ function PermissionMatrixTable({
                 {matrix.roles.map((r) => (
                   <th
                     key={r.id}
-                    className="px-2 py-2.5 text-center font-bold text-slate-700 min-w-[104px]"
+                    className="px-2 py-2.5 text-center font-bold text-slate-700 min-w-[240px]"
                   >
                     {r.name}
                     <div className="text-[10px] font-normal text-slate-400 mt-0.5">
@@ -522,7 +522,7 @@ function PermissionMatrixTable({
                   </td>
                   {matrix.roles.map((role) => (
                     <td key={role.id} className="px-2 py-2">
-                      <div className="flex items-center justify-center gap-1.5">
+                      <div className="flex items-center justify-center gap-1">
                         {m.actions.map((a) => {
                           const on = role.permissions.some(
                             (p) => p.module === m.module && p.action === a
@@ -541,14 +541,14 @@ function PermissionMatrixTable({
                                   : `${ACTION_LABEL[a]} — ${ACTION_HINT[a]}`
                               }
                               className={cn(
-                                "text-[10px] font-bold px-1.5 py-0.5 rounded border transition-colors",
+                                "text-[10px] font-bold px-1.5 py-1 rounded border transition-colors whitespace-nowrap",
                                 role.is_superuser && "opacity-40 cursor-not-allowed",
                                 on
                                   ? "bg-panna-green-600 border-panna-green-600 text-white"
-                                  : "border-stone-200 text-stone-400 hover:border-panna-green-400"
+                                  : "border-stone-200 text-stone-500 hover:border-panna-green-400 hover:text-panna-green-700"
                               )}
                             >
-                              {ACTION_LABEL[a].slice(0, 3)}
+                              {ACTION_LABEL[a]}
                             </button>
                           );
                         })}

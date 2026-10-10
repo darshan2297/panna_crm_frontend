@@ -7,7 +7,6 @@ import { api } from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useBackendStatus } from "@/components/common/BackendStatusProvider";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,12 +42,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fillCredentials = (user: string, pass: string) => {
-    setIdentifier(user);
-    setPassword(pass);
-    setErrorMessage(null);
   };
 
   return (
@@ -127,39 +120,6 @@ export default function LoginPage() {
             <p className="text-xs sm:text-sm text-slate-500">
               Enter your staff or administrator credentials to access the terminal.
             </p>
-          </div>
-
-          {/* Quick Demo Credentials Autofill */}
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-            <p className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-              <span>Quick Login Credentials:</span>
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => fillCredentials("admin", "admin123")}
-                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:border-panna-green-600 hover:bg-panna-green-50/50 hover:text-panna-green-900 transition-all text-center shadow-xs"
-              >
-                <div className="font-bold text-[11px]">Admin</div>
-                <div className="text-[10px] text-slate-400">admin123</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials("manager", "manager123")}
-                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:border-panna-green-600 hover:bg-panna-green-50/50 hover:text-panna-green-900 transition-all text-center shadow-xs"
-              >
-                <div className="font-bold text-[11px]">Manager</div>
-                <div className="text-[10px] text-slate-400">manager123</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials("staff", "staff123")}
-                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:border-panna-green-600 hover:bg-panna-green-50/50 hover:text-panna-green-900 transition-all text-center shadow-xs"
-              >
-                <div className="font-bold text-[11px]">Staff</div>
-                <div className="text-[10px] text-slate-400">staff123</div>
-              </button>
-            </div>
           </div>
 
           {/* Error Alert */}
