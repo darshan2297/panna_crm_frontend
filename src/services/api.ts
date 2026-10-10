@@ -76,6 +76,10 @@ import {
   Review,
   FAQ,
   DeliveryArea,
+  Role,
+  RoleInput,
+  PermissionMatrix,
+  MyPermissions,
   ContactInquiry,
 } from "@/types";
 import { useAuthStore } from "@/store/authStore";
@@ -283,6 +287,8 @@ class ApiClient {
     full_name: string;
     phone?: string;
     role: UserRole;
+    /** Assigns a Roles & Permissions role; supersedes the legacy `role`. */
+    role_id?: number | null;
     password: string;
     is_active?: boolean;
   }): Promise<APIResponse<User>> {
@@ -299,6 +305,8 @@ class ApiClient {
       full_name?: string;
       phone?: string;
       role?: UserRole;
+      /** Assigns a Roles & Permissions role; supersedes the legacy `role`. */
+      role_id?: number | null;
       is_active?: boolean;
       password?: string;
     }
@@ -1047,6 +1055,38 @@ class ApiClient {
 
   async getPromoCodes(): Promise<APIResponse<PromoCode[]>> {
     return this.request<APIResponse<PromoCode[]>>("/website/promocodes");
+  }
+
+  /* ---------------- Roles & permissions ---------------- */
+
+  async getMyPermissions(): Promise<APIResponse<MyPermissions>> {
+    return this.request<APIResponse<MyPermissions>>("/auth/permissions");
+  }
+
+  async getPermissionMatrix(): Promise<APIResponse<PermissionMatrix>> {
+    return this.request<APIResponse<PermissionMatrix>>("/roles/matrix");
+  }
+
+  async getRoles(): Promise<APIResponse<Role[]>> {
+    return this.request<APIResponse<Role[]>>("/roles");
+  }
+
+  async createRole(payload: RoleInput): Promise<APIResponse<Role>> {
+    return this.request<APIResponse<Role>>("/roles", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateRole(id: number, payload: Partial<RoleInput>): Promise<APIResponse<Role>> {
+    return this.request<APIResponse<Role>>(`/roles/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteRole(id: number): Promise<APIResponse<null>> {
+    return this.request<APIResponse<null>>(`/roles/${id}`, { method: "DELETE" });
   }
 
   async getPromoCode(id: number): Promise<APIResponse<PromoCode>> {

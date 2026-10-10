@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import {
@@ -27,10 +27,13 @@ import {
   Inbox,
   MapPin,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import { useUiStore } from "@/store/uiStore";
 import { useNavigationStore } from "@/store/navigationStore";
+import { usePermissionStore } from "@/store/permissionStore";
 import { cn } from "@/lib/utils";
+import type { PermissionModule } from "@/types";
 
 interface NavItemConfig {
   type?: "header";
@@ -40,6 +43,8 @@ interface NavItemConfig {
   badge?: string | number;
   badgeVariant?: "brand" | "warning" | "danger";
   children?: { title: string; href: string }[];
+  /** Permission module this link needs VIEW on. Absent = always visible. */
+  module?: PermissionModule;
 }
 
 const navItems: NavItemConfig[] = [
@@ -48,11 +53,13 @@ const navItems: NavItemConfig[] = [
     title: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
+    module: "DASHBOARD",
   },
   {
     title: "Orders",
     href: "/orders",
     icon: ShoppingBag,
+    module: "ORDERS",
     children: [
       { title: "All Orders", href: "/orders" },
       { title: "Live Kitchen Orders", href: "/live-orders" },
@@ -67,16 +74,19 @@ const navItems: NavItemConfig[] = [
     icon: Flame,
     badge: "LIVE",
     badgeVariant: "danger",
+    module: "LIVE_ORDERS",
   },
   {
     title: "Menu",
     href: "/menu",
     icon: UtensilsCrossed,
+    module: "MENU",
   },
   {
     title: "Inventory",
     href: "/inventory",
     icon: Boxes,
+    module: "INVENTORY",
     children: [
       { title: "All Ingredients", href: "/inventory" },
       { title: "Low Stock Alerts", href: "/inventory?tab=low_stock" },
@@ -87,6 +97,7 @@ const navItems: NavItemConfig[] = [
     title: "Packaging",
     href: "/packaging",
     icon: Package,
+    module: "PACKAGING",
     children: [
       { title: "Packaging Items", href: "/packaging" },
       { title: "Stock Levels", href: "/packaging?tab=stock" },
@@ -97,6 +108,7 @@ const navItems: NavItemConfig[] = [
     title: "Restock",
     href: "/restock",
     icon: Truck,
+    module: "RESTOCK",
     children: [
       { title: "Deficit Planner", href: "/restock" },
       { title: "Purchase Orders", href: "/restock?tab=purchase_orders" },
@@ -108,6 +120,7 @@ const navItems: NavItemConfig[] = [
     title: "Customers",
     href: "/customers",
     icon: UserCircle2,
+    module: "CUSTOMERS",
     children: [
       { title: "All Customers", href: "/customers" },
       { title: "Top Spenders", href: "/customers?tab=top" },
@@ -118,58 +131,75 @@ const navItems: NavItemConfig[] = [
     title: "Enquiries",
     href: "/inquiries",
     icon: Inbox,
+    module: "ENQUIRIES",
   },
   {
     title: "Staff",
     href: "/users",
     icon: Users,
+    module: "STAFF",
+  },
+  {
+    title: "Roles & Permissions",
+    href: "/roles",
+    icon: ShieldCheck,
+    module: "ROLES",
   },
   { type: "header", title: "Business" },
   {
     title: "Analytics",
     href: "/analytics",
     icon: BarChart3,
+    module: "ANALYTICS",
   },
   {
     title: "Integrations",
     href: "/integrations",
     icon: Flame,
+    module: "INTEGRATIONS",
   },
   {
     title: "Business Hours",
     href: "/business-hours",
     icon: Clock,
+    module: "BUSINESS_HOURS",
   },
   { type: "header", title: "Configuration" },
   {
     title: "Website Config",
     href: "/website-config",
     icon: Globe2,
+    module: "WEBSITE_CONFIG",
   },
   {
     title: "Promo Codes",
     href: "/promocodes",
     icon: Ticket,
+    module: "PROMO_CODES",
   },
   {
     title: "Delivery Areas",
     href: "/delivery-areas",
     icon: MapPin,
+    module: "DELIVERY_AREAS",
   },
   {
     title: "Reviews",
     href: "/reviews",
     icon: Star,
+    module: "REVIEWS",
   },
   {
     title: "FAQs",
     href: "/faqs",
     icon: HelpCircle,
+    module: "FAQS",
   },
   {
     title: "Settings",
     href: "/settings",
     icon: Settings,
+    module: "SETTINGS",
   },
 ];
 
@@ -181,6 +211,38 @@ function SidebarInner() {
   const pendingHref = useNavigationStore((s) => s.pendingHref);
   const beginNavigation = useNavigationStore((s) => s.beginNavigation);
   const settleNavigation = useNavigationStore((s) => s.settleNavigation);
+  const canView = usePermissionStore((s) => s.canView);
+  // Subscribe to the slices that change when permissions load. `canView`
+  // itself has a stable identity, so it cannot be the only dependency.
+  const grants = usePermissionStore((s) => s.grants);
+  const isSuperuser = usePermissionStore((s) => s.isSuperuser);
+  const permissionsLoaded = usePermissionStore((s) => s.loaded);
+
+  // Hide links the signed-in user has no VIEW grant for. A header with
+  // nothing left under it is dropped too, so no orphaned section labels
+  // survive. Superusers pass canView for everything.
+  const visibleItems = useMemo(() => {
+    const kept: NavItemConfig[] = [];
+    let pendingHeader: NavItemConfig | null = null;
+    for (const item of navItems) {
+      if (item.type === "header") {
+        // Replacing the header also discards the previous one when it
+        // had no visible children of its own.
+        pendingHeader = item;
+        continue;
+      }
+      if (item.module && !canView(item.module)) continue;
+      if (pendingHeader) {
+        kept.push(pendingHeader);
+        pendingHeader = null;
+      }
+      kept.push(item);
+    }
+    return kept;
+    // canView reads live store state via get(), so listing the changing
+    // slices keeps this memo honest.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canView, grants, isSuperuser, permissionsLoaded]);
 
   // Helper to determine which menu matches the current path
   const getMenuForPath = (path: string): string | null => {
@@ -274,7 +336,12 @@ function SidebarInner() {
 
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5 scrollbar-thin scrollbar-thumb-panna-green-800">
-        {navItems.map((item) => {
+        {visibleItems.length === 0 && permissionsLoaded && (
+          <p className="px-3 py-6 text-center text-[11px] text-panna-green-300">
+            No modules are visible for your role.
+          </p>
+        )}
+        {visibleItems.map((item) => {
           if (item.type === "header") {
             return (
               <div key={item.title} className="pt-4 pb-1 px-3">

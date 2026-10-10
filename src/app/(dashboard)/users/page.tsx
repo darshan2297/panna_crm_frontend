@@ -12,7 +12,8 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { api } from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
-import { User, UserRole } from "@/types";
+import { usePermissionStore } from "@/store/permissionStore";
+import { User, UserRole, Role } from "@/types";
 import {
   Users as UsersIcon,
   UserPlus,
@@ -33,7 +34,9 @@ import {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuthStore();
+  const can = usePermissionStore((s) => s.can);
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +58,7 @@ export default function UsersPage() {
     email: "",
     phone: "",
     role: "STAFF" as UserRole,
+    role_id: null as number | null,
     password: "",
   });
 
@@ -68,6 +72,7 @@ export default function UsersPage() {
     email: "",
     phone: "",
     role: "STAFF" as UserRole,
+    role_id: null as number | null,
     is_active: true,
     password: "",
   });
@@ -103,6 +108,32 @@ export default function UsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- search applies on submit, not per keystroke
   }, [selectedRole, page, pageSize]);
 
+  // Roles & Permissions drives assignment: the admin picks a role here and
+  // its module grants take effect on the user's next request.
+  useEffect(() => {
+    api
+      .getRoles()
+      .then((res) => {
+        if (res.data) setRoles(res.data);
+      })
+      .catch(() => {
+        // Non-fatal: the select falls back to the legacy role list.
+      });
+  }, []);
+
+  // Default the create form to the seeded Staff role once roles load.
+  useEffect(() => {
+    if (roles.length && newFormData.role_id == null) {
+      const staff = roles.find((r) => r.name === "Staff");
+      if (staff) setNewFormData((f) => ({ ...f, role_id: staff.id }));
+    }
+  }, [roles, newFormData.role_id]);
+
+  const roleNameFor = (u: User): string | null =>
+    u.role_id != null
+      ? roles.find((r) => r.id === u.role_id)?.name ?? null
+      : null;
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
@@ -124,6 +155,7 @@ export default function UsersPage() {
         email: "",
         phone: "",
         role: "STAFF",
+        role_id: null,
         password: "",
       });
       fetchUsers();
@@ -142,6 +174,7 @@ export default function UsersPage() {
       email: u.email,
       phone: u.phone || "",
       role: u.role,
+      role_id: u.role_id ?? null,
       is_active: u.is_active,
       password: "",
     });
@@ -163,6 +196,7 @@ export default function UsersPage() {
         email: editFormData.email,
         phone: editFormData.phone,
         role: editFormData.role,
+        role_id: editFormData.role_id,
         is_active: editFormData.is_active,
       };
       if (editFormData.password.trim()) {
@@ -219,7 +253,7 @@ export default function UsersPage() {
         </p>
       </div>
 
-      {currentUser?.role === "ADMIN" && (
+      {can("STAFF", "CREATE") && (
         <Button
           variant="primary"
           onClick={() => {
@@ -319,7 +353,9 @@ export default function UsersPage() {
                 <TableHead>Contact</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Joined</TableHead>
-                {currentUser?.role === "ADMIN" && <TableHead className="text-right">Actions</TableHead>}
+                {(can("STAFF", "UPDATE") || can("STAFF", "DELETE")) && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -351,9 +387,15 @@ export default function UsersPage() {
 
                     {/* Role */}
                     <TableCell>
-                      <Badge variant={roleVariant as any} size="sm">
-                        {u.role}
-                      </Badge>
+                      {roleNameFor(u) ? (
+                        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-bold text-slate-700">
+                          {roleNameFor(u)}
+                        </span>
+                      ) : (
+                        <Badge variant={roleVariant as any} size="sm">
+                          {u.role}
+                        </Badge>
+                      )}
                     </TableCell>
 
                     {/* Contact Info */}
@@ -399,19 +441,21 @@ export default function UsersPage() {
                     </TableCell>
 
                     {/* Admin Actions */}
-                    {currentUser?.role === "ADMIN" && (
+                    {(can("STAFF", "UPDATE") || can("STAFF", "DELETE")) && (
                       <TableCell className="text-right">
                         <div className="inline-flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => openEditModal(u)}
-                            title="Edit User"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-slate-500 hover:text-panna-green-700" />
-                          </Button>
-                          {u.id !== currentUser.id && (
+                          {can("STAFF", "UPDATE") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => openEditModal(u)}
+                              title="Edit User"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-slate-500 hover:text-panna-green-700" />
+                            </Button>
+                          )}
+                          {can("STAFF", "DELETE") && u.id !== currentUser?.id && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -495,37 +539,22 @@ export default function UsersPage() {
       </CardContent>
     </Card>
 
-    {/* Role Boundaries & Permissions Reference */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm space-y-2">
-        <div className="flex items-center gap-2 text-panna-gold-600 font-bold text-xs">
-          <Shield className="w-4 h-4" />
-          <span>ADMIN ROLE</span>
-        </div>
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Full operational & configuration access: user management, credentials, audit logs, financials, platform integration settings, and menu pricing.
-        </p>
+    {/* Role assignment pointer — roles are managed in Roles & Permissions */}
+    <div className="rounded-2xl border border-panna-green-200 bg-panna-green-50/60 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex items-center gap-2 text-panna-green-800 font-bold text-xs shrink-0">
+        <Shield className="w-4 h-4" />
+        <span>ROLE PERMISSIONS ARE CONFIGURABLE</span>
       </div>
-
-      <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm space-y-2">
-        <div className="flex items-center gap-2 text-panna-green-700 font-bold text-xs">
-          <Shield className="w-4 h-4" />
-          <span>MANAGER ROLE</span>
-        </div>
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Operations management: view/manage orders from all platforms, manage menu availability, full inventory purchases & wastage, packaging stock, and analytics.
-        </p>
-      </div>
-
-      <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm space-y-2">
-        <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
-          <Shield className="w-4 h-4" />
-          <span>STAFF ROLE</span>
-        </div>
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Kitchen terminal: view incoming tickets, update order prep & delivery statuses, and record basic daily stock-in & stock-out operations.
-        </p>
-      </div>
+      <p className="text-xs text-panna-green-900/70 leading-relaxed flex-1">
+        Each role bundles module-level permissions. Create new roles or adjust
+        what existing ones can view, create, edit, and delete.
+      </p>
+      <a
+        href="/roles"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-panna-green-800 hover:text-panna-green-950 underline underline-offset-2 shrink-0"
+      >
+        Open Roles &amp; Permissions
+      </a>
     </div>
 
     {/* CREATE USER MODAL */}
@@ -579,15 +608,43 @@ export default function UsersPage() {
           <label className="block text-xs font-semibold text-slate-700 tracking-wide uppercase">
             Assigned Role
           </label>
-          <select
-            value={newFormData.role}
-            onChange={(e) => setNewFormData({ ...newFormData, role: e.target.value as UserRole })}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-panna-green-500/20 focus:border-panna-green-600"
-          >
-            <option value="STAFF">STAFF (Kitchen & Orders)</option>
-            <option value="MANAGER">MANAGER (Orders, Inventory, Menu & Analytics)</option>
-            <option value="ADMIN">ADMIN (Full System Privileges)</option>
-          </select>
+          {roles.length > 0 ? (
+            <>
+              <select
+                value={newFormData.role_id ?? ""}
+                onChange={(e) =>
+                  setNewFormData({
+                    ...newFormData,
+                    role_id: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-panna-green-500/20 focus:border-panna-green-600"
+              >
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} — {r.permissions.length} permission
+                    {r.permissions.length === 1 ? "" : "s"}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400">
+                The role&apos;s module grants apply on the user&apos;s next request.
+                Manage roles under Roles &amp; Permissions.
+              </p>
+            </>
+          ) : (
+            <select
+              value={newFormData.role}
+              onChange={(e) =>
+                setNewFormData({ ...newFormData, role: e.target.value as UserRole })
+              }
+              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-panna-green-500/20 focus:border-panna-green-600"
+            >
+              <option value="STAFF">STAFF (Kitchen & Orders)</option>
+              <option value="MANAGER">MANAGER (Orders, Inventory, Menu & Analytics)</option>
+              <option value="ADMIN">ADMIN (Full System Privileges)</option>
+            </select>
+          )}
         </div>
 
         <Input
@@ -661,16 +718,38 @@ export default function UsersPage() {
             <label className="block text-xs font-semibold text-slate-700 tracking-wide uppercase">
               Role
             </label>
-            <select
-              value={editFormData.role}
-              onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as UserRole })}
-              disabled={editingUser?.id === currentUser?.id}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-panna-green-500/20 focus:border-panna-green-600 disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="STAFF">STAFF</option>
-              <option value="MANAGER">MANAGER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
+            {roles.length > 0 ? (
+              <select
+                value={editFormData.role_id ?? ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    role_id: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                disabled={editingUser?.id === currentUser?.id}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-panna-green-500/20 focus:border-panna-green-600 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={editFormData.role}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, role: e.target.value as UserRole })
+                }
+                disabled={editingUser?.id === currentUser?.id}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-panna-green-500/20 focus:border-panna-green-600 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="STAFF">STAFF</option>
+                <option value="MANAGER">MANAGER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            )}
           </div>
 
           <div className="space-y-1.5">

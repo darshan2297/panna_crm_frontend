@@ -1,5 +1,77 @@
 export type UserRole = "ADMIN" | "MANAGER" | "STAFF";
 
+/* ------------------------------------------------------------------ */
+/* Role-based access control                                          */
+/* ------------------------------------------------------------------ */
+
+/** Every permissioned area of the CRM. Mirrors the backend Module enum. */
+export type PermissionModule =
+  | "DASHBOARD"
+  | "ORDERS"
+  | "LIVE_ORDERS"
+  | "CUSTOMERS"
+  | "ENQUIRIES"
+  | "STAFF"
+  | "ROLES"
+  | "MENU"
+  | "INVENTORY"
+  | "PACKAGING"
+  | "RESTOCK"
+  | "ANALYTICS"
+  | "INTEGRATIONS"
+  | "BUSINESS_HOURS"
+  | "WEBSITE_CONFIG"
+  | "PROMO_CODES"
+  | "DELIVERY_AREAS"
+  | "REVIEWS"
+  | "FAQS"
+  | "SETTINGS";
+
+export type PermissionAction = "VIEW" | "CREATE" | "UPDATE" | "DELETE";
+
+export interface PermissionGrant {
+  module: PermissionModule;
+  action: PermissionAction;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  is_system: boolean;
+  is_superuser: boolean;
+  permissions: PermissionGrant[];
+  user_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoleInput {
+  name: string;
+  description?: string;
+  permissions: PermissionGrant[];
+}
+
+export interface ModuleInfo {
+  module: PermissionModule;
+  label: string;
+  actions: PermissionAction[];
+}
+
+export interface PermissionMatrix {
+  modules: ModuleInfo[];
+  roles: Role[];
+}
+
+/** The signed-in user's own effective permissions, for UI gating. */
+export interface MyPermissions {
+  role: string | null;
+  role_id: number | null;
+  is_superuser: boolean;
+  /** Flat "MODULE:ACTION" strings, or ["*"] for a superuser. */
+  permissions: string[];
+}
+
 export interface User {
   id: number;
   email: string;
@@ -7,6 +79,7 @@ export interface User {
   full_name: string;
   phone?: string;
   role: UserRole;
+  role_id?: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
