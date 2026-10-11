@@ -263,6 +263,11 @@ export interface Order {
   refund_id?: string | null;
   refund_amount?: number | null;
   refunded_at?: string | null;
+  // Razorpay's own verdict on the refund. Only "processed" means the customer
+  // actually has the money back.
+  refund_status?: string | null;
+  refund_receipt?: string | null;
+  refund_reason?: string | null;
   items_summary?: string | null;
   notes?: string | null;
   created_at: string;

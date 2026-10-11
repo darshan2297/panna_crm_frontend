@@ -16,12 +16,51 @@ import {
   History,
   AlertCircle,
   Loader2,
+  MessageCircle,
+  ImageIcon,
 } from "lucide-react";
 import { api } from "@/services/api";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { OrderDetail } from "@/types";
 import { downloadInvoiceHtml, printInvoiceHtml, printReceipt, printKot } from "@/lib/invoice";
+import {
+  buildCustomerWhatsAppUrl,
+  buildRefundSlipMessage,
+  gatewayLabel,
+  isRefundComplete,
+  refundHeadline,
+} from "@/lib/refundSlip";
+import {
+  renderRefundSlipImage,
+  shareRefundSlipImage,
+  refundSlipFilename,
+} from "@/lib/refundSlipImage";
+
+/** Wording printed on the slip image, keyed by the gateway's real status. */
+const REFUND_FOOTNOTES: Record<string, string> = {
+  processed:
+    "This amount has been returned to the customer's original payment method. " +
+    "It may take 5-7 working days to reflect in their bank statement.",
+  pending:
+    "The customer's bank is still processing this refund. It usually appears " +
+    "within 5-7 working days.",
+  failed:
+    "This refund could not be completed automatically. Our team has been " +
+    "notified and will follow up with the customer.",
+};
+
+/** Label/value rows shown on the slip image, in reading order. */
+function buildRefundRows(order: OrderDetail) {
+  const rows: { label: string; value: string }[] = [
+    { label: "Refunded via", value: gatewayLabel(order.gateway) },
+    { label: "Date", value: fmtDate(order.refunded_at) },
+  ];
+  if (order.refund_id) rows.push({ label: "Refund ID", value: order.refund_id });
+  if (order.refund_receipt) rows.push({ label: "Receipt", value: order.refund_receipt });
+  if (order.refund_reason) rows.push({ label: "Reason", value: order.refund_reason });
+  return rows;
+}
 
 const inr = (n: number | null | undefined) =>
   `₹${(Number(n) || 0).toLocaleString("en-IN", {
@@ -93,6 +132,8 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sharingSlip, setSharingSlip] = useState(false);
+  const [shareNote, setShareNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -500,10 +541,115 @@ export default function OrderDetailPage() {
             )}
 
             {isRefunded && (
-              <div className="mt-2 pt-2 border-t border-rose-200 space-y-0.5">
+              <div className="mt-2 pt-2 border-t border-rose-200 space-y-1.5">
                 <Row label="Refund ID" value={order.refund_id || "—"} mono />
                 <Row label="Refunded amount" value={inr(order.refund_amount)} mono />
                 <Row label="Refunded at" value={fmtDate(order.refunded_at)} />
+                {order.refund_receipt && (
+                  <Row label="Gateway receipt" value={order.refund_receipt} mono />
+                )}
+                {order.refund_status && (
+                  <Row
+                    label="Gateway status"
+                    value={
+                      <Badge variant={isRefundComplete(order.refund_status) ? "success" : "warning"}>
+                        {order.refund_status}
+                      </Badge>
+                    }
+                  />
+                )}
+                {order.refund_reason && (
+                  <Row label="Reason" value={order.refund_reason} />
+                )}
+
+                {!isRefundComplete(order.refund_status) && (
+                  <p className="pt-1 text-[11px] leading-relaxed text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2">
+                    Razorpay has <strong>not</strong> confirmed this refund as processed.
+                    Do not tell the customer the money is back until it reads
+                    &ldquo;processed&rdquo;.
+                  </p>
+                )}
+
+                <div className="pt-1 flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={sharingSlip}
+                    onClick={async () => {
+                      setSharingSlip(true);
+                      setShareNote(null);
+                      try {
+                        const status = (order.refund_status || "").toLowerCase();
+                        const blob = await renderRefundSlipImage({
+                          brandName: "Panna Biryani",
+                          tagline: "Biryani Made For Sharing",
+                          orderNumber: order.order_number,
+                          statusHeadline: refundHeadline(order.refund_status),
+                          tone:
+                            status === "processed"
+                              ? "success"
+                              : status === "failed"
+                                ? "danger"
+                                : "warning",
+                          amount: Number(order.refund_amount) || 0,
+                          rows: buildRefundRows(order),
+                          footnote:
+                            REFUND_FOOTNOTES[status || "processed"] ||
+                            REFUND_FOOTNOTES.processed,
+                        });
+                        const outcome = await shareRefundSlipImage(
+                          blob,
+                          refundSlipFilename(order.order_number)
+                        );
+                        if (outcome === "shared") setShareNote("Slip shared.");
+                        else if (outcome === "downloaded")
+                          setShareNote("Slip downloaded — attach it in the WhatsApp chat.");
+                        else if (outcome === "unsupported")
+                          setShareNote("Image sharing unavailable here — slip downloaded.");
+                      } catch {
+                        setShareNote("Could not create the slip image.");
+                      } finally {
+                        setSharingSlip(false);
+                      }
+                    }}
+                  >
+                    {sharingSlip ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <ImageIcon className="w-3.5 h-3.5" />
+                    )}
+                    {sharingSlip ? "Preparing…" : "Share slip as image"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const url = buildCustomerWhatsAppUrl(
+                        order.customer_phone,
+                        buildRefundSlipMessage(order.order_number, {
+                          amount: order.refund_amount,
+                          refundedAt: order.refunded_at,
+                          status: order.refund_status,
+                          reference: order.refund_id,
+                          receipt: order.refund_receipt,
+                          gateway: order.gateway,
+                          reason: order.refund_reason,
+                        })
+                      );
+                      if (!url) {
+                        alert("This customer has no usable WhatsApp number.");
+                        return;
+                      }
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Share as text
+                  </Button>
+                </div>
+
+                {shareNote && <p className="pt-1 text-[11px] text-slate-600">{shareNote}</p>}
               </div>
             )}
           </Section>
