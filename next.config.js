@@ -2,7 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["localhost", "images.unsplash.com"],
+    // `domains` is deprecated in favour of `remotePatterns`, which also allows
+    // the port to be declared explicitly.
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "localhost" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
   },
 };
 

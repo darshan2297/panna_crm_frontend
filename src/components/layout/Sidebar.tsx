@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -302,7 +303,7 @@ function SidebarInner() {
       <div className="h-16 flex items-center justify-between px-4 border-b border-panna-green-900/50">
         {!sidebarCollapsed ? (
           <Link href="/" className="flex items-center gap-2.5">
-            <img src="/brand/panna-logo.png" alt="Panna logo" className="w-9 h-9 rounded-lg shadow-md shadow-panna-gold-500/20" />
+            <Image src="/brand/panna-logo.png" alt="Panna logo" width={733} height={752} className="w-9 h-9 object-contain rounded-lg shadow-md shadow-panna-gold-500/20" />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-base tracking-wide text-white font-serif">
@@ -318,7 +319,7 @@ function SidebarInner() {
             </div>
           </Link>
         ) : (
-          <img src="/brand/panna-logo.png" alt="Panna logo" className="mx-auto w-9 h-9 rounded-lg" />
+          <Image src="/brand/panna-logo.png" alt="Panna logo" width={733} height={752} className="mx-auto w-9 h-9 object-contain rounded-lg" />
         )}
 
         <button

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Lock, User, Eye, EyeOff, Sparkles, ArrowRight, ShieldCheck, ChefHat } from "lucide-react";
 import { api } from "@/services/api";
@@ -52,7 +53,7 @@ export default function LoginPage() {
 
         {/* Top Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src="/brand/panna-logo.png" alt="Panna Biryani logo" className="w-11 h-11 rounded-full shadow-lg shadow-panna-gold-500/20" />
+          <Image src="/brand/panna-logo.png" alt="Panna Biryani logo" width={733} height={752} className="w-11 h-11 object-contain rounded-full shadow-lg shadow-panna-gold-500/20" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-serif text-2xl font-bold tracking-wide">Panna</span>
@@ -110,7 +111,7 @@ export default function LoginPage() {
           {/* Header Mobile Logo */}
           <div className="text-center lg:text-left space-y-2">
             <div className="lg:hidden inline-flex items-center justify-center w-12 h-12 mx-auto mb-2">
-              <img src="/brand/panna-logo.png" alt="Panna Biryani logo" className="w-12 h-12 rounded-full shadow-md" />
+              <Image src="/brand/panna-logo.png" alt="Panna Biryani logo" width={733} height={752} className="w-12 h-12 object-contain rounded-full shadow-md" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">
               Sign In to Panna CRM

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Trash2, Inbox, CheckCheck, MailOpen, Mail, Phone, Calendar, Users } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -32,7 +32,7 @@ export default function InquiriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<ContactInquiry | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.getContactInquiries(
@@ -40,8 +40,8 @@ export default function InquiriesPage() {
       );
       setItems(res.data || []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
-  };
-  useEffect(() => { load(); }, [filter]);
+  }, [filter]);
+  useEffect(() => { load(); }, [load]);
 
   const markRead = async (i: ContactInquiry) => {
     if (i.is_read) return;

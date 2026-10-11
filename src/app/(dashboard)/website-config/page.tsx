@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   Image as ImageIcon, Save, Plus, Trash2, Upload, Truck, Store, Gift, Globe2, CreditCard,
 } from "lucide-react";
@@ -68,7 +69,18 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
           />
         </label>
       </div>
-      {value && <img src={resolveImageSrc(value)} alt={label} className="mt-1 h-16 rounded border object-cover" />}
+      {value && (
+        // `unoptimized` because resolveImageSrc may return an arbitrary host,
+        // a data: URL or a blob: URL — none of which the image optimizer accepts.
+        <Image
+          src={resolveImageSrc(value)}
+          alt={label}
+          width={160}
+          height={64}
+          unoptimized
+          className="mt-1 h-16 w-auto rounded border object-cover"
+        />
+      )}
     </div>
   );
 }
